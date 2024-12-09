@@ -1,17 +1,17 @@
 import Toybox.Application;
 import Toybox.WatchUi;
 
-class wfApp extends Application.AppBase {
+class WfApp extends Application.AppBase {
 
-    var view as wfView;
-    var input as wfDeligate;
+    private var _view as WfView;
+    private var _input as WfDeligate;
     function initialize() {
         AppBase.initialize();
 
         var settings = System.getDeviceSettings();
 
-        view = new wfView(settings.screenHeight, settings.screenWidth);
-        input = new wfDeligate(settings.screenHeight, settings.screenWidth);
+        _view = new WfView(settings.screenHeight, settings.screenWidth);
+        _input = new WfDeligate(settings.screenHeight, settings.screenWidth);
     }
 
     // onStart() is called on application start up
@@ -22,10 +22,10 @@ class wfApp extends Application.AppBase {
 
     // Return the initial view of your application here
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        return [ view, input ];
+        return [ _view, _input ];
     }
 }
 
-function getApp() as wfApp {
-    return Application.getApp() as wfApp;
+function getApp() as WfApp {
+    return Application.getApp() as WfApp;
 }
