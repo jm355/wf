@@ -44,7 +44,7 @@ class WfView extends WatchUi.WatchFace {
         }
 
         var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
-        _sunString = Lang.format("$1$:$2$", [gregorianSunTime.hour, gregorianSunTime.min.format("%02d")]);
+        _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
 
         Storage.setValue('s', [_sunTime.value(), _sunString]);
     }
@@ -119,7 +119,7 @@ class WfView extends WatchUi.WatchFace {
     function onUpdate(dc as Dc) as Void {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
-        var timeString = Lang.format("$1$:$2$", [date.hour, date.min.format("%02d")]);
+        var timeString = date.hour + ":" + date.min.format("%02d");
         var moveBarLevel = Toybox.ActivityMonitor.getInfo().moveBarLevel;
 
         // Set the color before potentially calling dc.clear() and before drawing time text
@@ -127,14 +127,14 @@ class WfView extends WatchUi.WatchFace {
 
         // debug stuff
         //cbCount = cbCount + 1;
-        //dc.drawText(_dateX, 30, Graphics.FONT_SYSTEM_MEDIUM, Lang.format("c$1$ s$2$", [cbCount, date.sec]), Graphics.TEXT_JUSTIFY_CENTER);
+        //dc.drawText(_dateX, 30, Graphics.FONT_SYSTEM_MEDIUM, "c" + cbCount + "s" + date.sec, Graphics.TEXT_JUSTIFY_CENTER);
 
         // If the day has changed, get new data for the sunrise, sunset, and how to display the date
         if( _day != date.day ) {
             _day = date.day;
 
-            _dayString = Lang.format("$1$ ", [date.day_of_week]);
-            _dateString = Lang.format("$1$ $2$", [date.month, date.day]);
+            _dayString = date.day_of_week + " ";
+            _dateString = date.month + " " + date.day;
 
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
             _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_SYSTEM_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_SYSTEM_MEDIUM))/2);
