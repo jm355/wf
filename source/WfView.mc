@@ -119,8 +119,8 @@ class WfView extends WatchUi.WatchFace {
     function onUpdate(dc as Dc) as Void {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
-        var timeString = date.hour + ":" + date.min.format("%02d");
-        var moveBarLevel = Toybox.ActivityMonitor.getInfo().moveBarLevel;
+
+        // I wish you could only run this if the minute != the previous/saved minute, but unfortunately that causes a black screen when you look at the watch
 
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
@@ -137,7 +137,7 @@ class WfView extends WatchUi.WatchFace {
             _dateString = date.month + " " + date.day;
 
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
-            _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_SYSTEM_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_SYSTEM_MEDIUM))/2);
+            _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_SYSTEM_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_SYSTEM_MEDIUM)) / 2);
 
             var today = Time.today();
             var oldSunriseTime = _sunriseTime.add(_secsPerDay);
@@ -160,6 +160,9 @@ class WfView extends WatchUi.WatchFace {
             // The upcoming sun event has passed, update the string.
             updateSunTime(now);
         }
+
+        var timeString = date.hour + ":" + date.min.format("%02d");
+        var moveBarLevel = Toybox.ActivityMonitor.getInfo().moveBarLevel;
 
         // Draw the time with the move bar filling it up
         if(moveBarLevel != null && moveBarLevel > Toybox.ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
