@@ -1,17 +1,26 @@
 import Toybox.Application;
 import Toybox.WatchUi;
+import Toybox.Complications;
+import Toybox.Lang;
 
 class WfApp extends Application.AppBase {
 
     private var _view as WfView;
-    private var _input as WfDeligate;
+    private const _input = new WfDeligate();
+
+    static const sunriseId = new Id(Complications.COMPLICATION_TYPE_SUNRISE);
+    static var centerX as Number;
+    static var centerY as Number;
+
     function initialize() {
         AppBase.initialize();
 
         var settings = System.getDeviceSettings();
 
-        _view = new WfView(settings.screenHeight, settings.screenWidth);
-        _input = new WfDeligate(settings.screenHeight, settings.screenWidth);
+        centerX = settings.screenWidth / 2;
+        centerY = settings.screenHeight / 2;
+
+        _view = new WfView(settings.screenWidth);
     }
 
     // onStart() is called on application start up

@@ -7,8 +7,6 @@ import Toybox.Complications;
 
 class WfView extends WatchUi.WatchFace {
     private var _screenWidth as Number;
-    private var _centerX as Number;
-    private var _centerY as Number;
     private var _dateX as Number;
     private var _dateY as Number;
     private var _sunY as Number;
@@ -29,7 +27,6 @@ class WfView extends WatchUi.WatchFace {
 
     private var _font as VectorFont or FontType;
 
-    private const _sunriseId = new Id(Complications.COMPLICATION_TYPE_SUNRISE);
     private const _sunsetId = new Id(Complications.COMPLICATION_TYPE_SUNSET);
     private const _centerJust = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
     private const _secsPerDay = new Time.Duration(Gregorian.SECONDS_PER_DAY);
@@ -52,11 +49,12 @@ class WfView extends WatchUi.WatchFace {
         Storage.setValue('s', [_sunTime.value(), _sunString]);
     }
 
-    function initialize(h as Number, w as Number) {
+    function initialize(w as Number) {
         WatchFace.initialize();
 
-        // Hopefully these look good on non-enduro devices
-        var tempFont = Graphics.getVectorFont({:face => ["BionicSemiBold", "RobotoCondensedRegular", "KosugiRegular"], :size => 155});
+        // Hopefully this looks good on non-enduro devices
+        // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
+        var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 155});
         if (tempFont != null) {
             _font = tempFont;
         } else {
@@ -66,12 +64,10 @@ class WfView extends WatchUi.WatchFace {
         _timeHeight = Graphics.getFontHeight(_font) / 2;
         _halfTimeHeight = _timeHeight / 2;
 
-		_centerY = h/2;
 		_screenWidth = w;
-        _centerX = _screenWidth / 2;
-        _dateY = _centerY+_halfTimeHeight;
+        _dateY = WfApp.centerY + _halfTimeHeight;
 
-        _timeTopLeft = _centerY - _halfTimeHeight - 10;
+        _timeTopLeft = WfApp.centerY - _halfTimeHeight - 10;
         _sunY = _timeTopLeft - 15;
 
         // debug stuff
@@ -99,7 +95,7 @@ class WfView extends WatchUi.WatchFace {
             _dayString = "";
             _dateString = "";
             // This makes it so the oldSunriseTime logic below works even on the initial run, except in this case the _sunriseOffset will be 0. That's fine, it's not that important and every other time after the initial run will have a real value to work with. Could get wonky if the user uses this face, then switches to another one, then switches back, but it'll only be off for a day and only affect the sunrise time displayed between sunset and midnight of the first run after a long hiatus
-            _sunriseTime = Time.today().add(new Time.Duration(Complications.getComplication(_sunriseId).value as Number)).subtract(_secsPerDay) as Moment;
+            _sunriseTime = Time.today().add(new Time.Duration(Complications.getComplication(WfApp.sunriseId).value as Number)).subtract(_secsPerDay) as Moment;
             _sunsetTime = new Moment(0);
             _sunriseOffset = 0;
         }
@@ -141,12 +137,12 @@ class WfView extends WatchUi.WatchFace {
             _dateString = Lang.format("$1$ $2$", [date.month, date.day]);
 
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
-            _dateX = _centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_SYSTEM_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_SYSTEM_MEDIUM))/2);
+            _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_SYSTEM_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_SYSTEM_MEDIUM))/2);
 
             var today = Time.today();
             var oldSunriseTime = _sunriseTime.add(_secsPerDay);
 
-            _sunriseTime = today.add(new Time.Duration(Complications.getComplication(_sunriseId).value as Number));
+            _sunriseTime = today.add(new Time.Duration(Complications.getComplication(WfApp.sunriseId).value as Number));
             _sunsetTime = today.add(new Time.Duration(Complications.getComplication(_sunsetId).value as Number));
 
             // Sunrise and sunset aren't the same time every day. The complication api doesn't allow you to get tomorrows sunrise, so we can use this to estimate it based on how much the time changed yesterday.
@@ -171,28 +167,28 @@ class WfView extends WatchUi.WatchFace {
                 var clipScale = (moveBarLevel - 1) / 4.0f;
 
                 // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
-                dc.setClip(0, _timeTopLeft, _screenWidth, (_halfTimeHeight * (1-clipScale))+10);
-                dc.drawText(_centerX, _centerY, _font, timeString, _centerJust);
+                dc.setClip(0, _timeTopLeft, _screenWidth, (_halfTimeHeight * (1 - clipScale)) + 10);
+                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
 
                 // Draw the red part of the text
                 dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                dc.setClip(0, _centerY - (_halfTimeHeight * clipScale), _screenWidth, _timeHeight);
-                dc.drawText(_centerX, _centerY, _font, timeString, _centerJust);
+                dc.setClip(0, WfApp.centerY - (_halfTimeHeight * clipScale), _screenWidth, _timeHeight);
+                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
 
                 dc.clearClip();
             } else {
                 // The move bar is full, don't mess with clipping and math when we can just draw the text in red
                 dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                dc.drawText(_centerX, _centerY, _font, timeString, _centerJust);
+                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
             }
         } else {
             // The move bar is empty, don't mess with clipping and math when we can just draw the text in white
-            dc.drawText(_centerX, _centerY, _font, timeString, _centerJust);
+            dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
         }
 
         // Draw the sun time and date
         dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_BLACK);
-        dc.drawText(_centerX, _sunY, Graphics.FONT_SYSTEM_MEDIUM, _sunString, _centerJust);
+        dc.drawText(WfApp.centerX, _sunY, Graphics.FONT_SYSTEM_MEDIUM, _sunString, _centerJust);
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_BLACK);
         dc.drawText(_dateX, _dateY, Graphics.FONT_SYSTEM_MEDIUM, _dayString, Graphics.TEXT_JUSTIFY_RIGHT);
