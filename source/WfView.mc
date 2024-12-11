@@ -6,14 +6,14 @@ import Toybox.Time;
 import Toybox.Complications;
 
 class WfView extends WatchUi.WatchFace {
-    private var _screenWidth as Number;
+    private static var _screenWidth as Number;
     private var _dateX as Number;
-    private var _dateY as Number;
-    private var _sunY as Number;
-    private var _timeTopLeft as Number;
+    private static var _dateY as Number;
+    private static var _sunY as Number;
+    private static var _timeTopLeft as Number;
 
-    private var _timeHeight as Number;
-    private var _halfTimeHeight as Number;
+    private static var _timeHeight as Number;
+    private static var _halfTimeHeight as Number;
 
     private var _day as Number;
     private var _sunriseOffset as Number;
@@ -26,10 +26,10 @@ class WfView extends WatchUi.WatchFace {
     private var _dayString as String;
     private var _dateString as String;
 
-    private var _font as VectorFont or FontType;
+    private static var _font as VectorFont or FontType;
 
-    private const _sunsetId = new Id(Complications.COMPLICATION_TYPE_SUNSET);
-    private const _secsPerDay = new Time.Duration(Gregorian.SECONDS_PER_DAY);
+    private static const _sunsetId = new Id(Complications.COMPLICATION_TYPE_SUNSET);
+    private static const _secsPerDay = new Time.Duration(Gregorian.SECONDS_PER_DAY);
 
     // debug stuff
     //private var cbCount as Number = 0;
