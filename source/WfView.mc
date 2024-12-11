@@ -21,6 +21,7 @@ class WfView extends WatchUi.WatchFace {
     private var _sunsetTime as Moment;
     private var _sunTime as Moment;
     private var _sunString as String;
+    private var _sunColor as ColorValue;
 
     private var _dayString as String;
     private var _dateString as String;
@@ -28,7 +29,6 @@ class WfView extends WatchUi.WatchFace {
     private var _font as VectorFont or FontType;
 
     private const _sunsetId = new Id(Complications.COMPLICATION_TYPE_SUNSET);
-    private const _centerJust = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
     private const _secsPerDay = new Time.Duration(Gregorian.SECONDS_PER_DAY);
 
     // debug stuff
@@ -37,16 +37,19 @@ class WfView extends WatchUi.WatchFace {
     function updateSunTime(now as Moment) as Void {
         if(now.lessThan(_sunriseTime)) {
             _sunTime = _sunriseTime;
+            _sunColor = Graphics.COLOR_YELLOW;
         } else if(now.lessThan(_sunsetTime)) {
             _sunTime = _sunsetTime;
+            _sunColor = Graphics.COLOR_ORANGE;
         } else {
+            _sunColor = Graphics.COLOR_YELLOW;
             _sunTime = _sunriseTime.add(new Time.Duration(_sunriseOffset)).add(_secsPerDay);
         }
 
         var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
         _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
 
-        Storage.setValue('s', [_sunTime.value(), _sunString]);
+        Storage.setValue('s', [_sunTime.value(), _sunString, _sunColor]);
     }
 
     function initialize(w as Number) {
@@ -68,15 +71,17 @@ class WfView extends WatchUi.WatchFace {
         _dateY = WfApp.centerY + _halfTimeHeight;
 
         _timeTopLeft = WfApp.centerY - _halfTimeHeight - 10;
-        _sunY = _timeTopLeft - 15;
+        _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_SYSTEM_MEDIUM) + 5;
 
         // debug stuff
         //Storage.clearValues();
 
-        var sunData = Storage.getValue('s') as [Number, String];
-        if(sunData != null) {
+        // If we fail to load sun and date data from memory, fall back to initializing it cleanly, and clear any bad data in storage. Fresh data will be stored in the first call to onUpdate
+        try {
+            var sunData = Storage.getValue('s') as [Number, String, ColorValue];
             _sunTime = new Moment(sunData[0]);
             _sunString = sunData[1];
+            _sunColor = sunData[2];
 
             var dateData = Storage.getValue('d') as [Number, Number, String, String, Number, Number, Number];
             _day = dateData[0];
@@ -86,9 +91,12 @@ class WfView extends WatchUi.WatchFace {
             _sunriseTime = new Moment(dateData[4]);
             _sunsetTime = new Moment(dateData[5]);
             _sunriseOffset = dateData[6];
-        } else {
+        } catch( ex ) {
+            Storage.clearValues();
+
             _sunTime = new Moment(0);
             _sunString = "";
+            _sunColor = Graphics.COLOR_ORANGE;
 
             _day = 0;
             _dateX = 0;
@@ -170,27 +178,27 @@ class WfView extends WatchUi.WatchFace {
 
                 // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
                 dc.setClip(0, _timeTopLeft, _screenWidth, (_halfTimeHeight * (1 - clipScale)) + 10);
-                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
+                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                 // Draw the red part of the text
                 dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
                 dc.setClip(0, WfApp.centerY - (_halfTimeHeight * clipScale), _screenWidth, _timeHeight);
-                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
+                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                 dc.clearClip();
             } else {
                 // The move bar is full, don't mess with clipping and math when we can just draw the text in red
                 dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
+                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             }
         } else {
             // The move bar is empty, don't mess with clipping and math when we can just draw the text in white
-            dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, _centerJust);
+            dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         // Draw the sun time and date
-        dc.setColor(Graphics.COLOR_ORANGE, Graphics.COLOR_BLACK);
-        dc.drawText(WfApp.centerX, _sunY, Graphics.FONT_SYSTEM_MEDIUM, _sunString, _centerJust);
+        dc.setColor(_sunColor, Graphics.COLOR_BLACK);
+        dc.drawText(WfApp.centerX, _sunY, Graphics.FONT_SYSTEM_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_BLACK);
         dc.drawText(_dateX, _dateY, Graphics.FONT_SYSTEM_MEDIUM, _dayString, Graphics.TEXT_JUSTIFY_RIGHT);
