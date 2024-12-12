@@ -52,7 +52,7 @@ class WfView extends WatchUi.WatchFace {
 
         // Hopefully this looks good on non-enduro devices
         // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
-        var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 155});
+        var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 156});
         if (tempFont != null) {
             _font = tempFont;
         } else {
