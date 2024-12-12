@@ -1,5 +1,5 @@
-import Toybox.WatchUi;
 import Toybox.Complications;
+import Toybox.WatchUi;
 
 class WfDeligate extends WatchUi.WatchFaceDelegate
 {
