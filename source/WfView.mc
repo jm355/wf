@@ -8,56 +8,51 @@ import Toybox.WatchUi;
 import Toybox.Weather;
 
 class WfView extends WatchUi.WatchFace {
-    private var _screenWidth as Number = 0;
-    private var _dateX as Number = 0;
-    private var _dateY as Number;
-    private var _sunY as Number;
-    private var _timeTopLeft as Number;
+    var _screenWidth as Number = 0;
+    var _dateX as Number = 0;
+    var _dateY as Number = 0;
+    var _sunY as Number = 0;
+    var _timeTopLeft as Number = 0;
 
-    private var _timeHeight as Number;
-    private var _halfTimeHeight as Number;
+    var _timeHeight as Number;
+    var _halfTimeHeight as Number;
 
-    private var _day as Number = 0;
-    private var _sunriseTime as Moment = new Moment(0);
-    private var _sunsetTime as Moment = new Moment(0);
-    private var _sunTime as Moment = new Moment(0);
-    private var _sunString as String = "";
-    private var _sunColor as ColorValue = Graphics.COLOR_ORANGE;
+    var _day as Number = 0;
+    var _sunriseTime as Moment = new Moment(0);
+    var _sunsetTime as Moment = new Moment(0);
+    var _sunTime as Moment = new Moment(0);
+    var _sunString as String = "";
+    var _sunColor as ColorValue = Graphics.COLOR_ORANGE;
 
-    private var _dayString as String = "";
-    private var _dateString as String = "";
+    var _dayString as String = "";
+    var _dateString as String = "";
 
-    private var _font as VectorFont or FontType;
-
-    private var _sunsetId as Id;
-    private const _secsPerDay = new Time.Duration(Gregorian.SECONDS_PER_DAY);
+    var _font as VectorFont or FontType;
 
     function updateSunTime(now as Moment) as Void {
-        if(Toybox has :Complications || Toybox has :Weather) {
-            if (now.greaterThan(_sunsetTime)) {
-                var pos = Position.getInfo().position;
-                if (pos != null) {
-                    var tomorrowSunrise = Weather.getSunrise(pos, now.add(_secsPerDay));
-                    if (tomorrowSunrise != null) {
-                        _sunTime = tomorrowSunrise;
-                    } else {
-                        _sunTime = _sunriseTime.add(_secsPerDay);
-                    }
+        if (now.greaterThan(_sunsetTime)) {
+            var pos = Position.getInfo().position;
+            if (pos != null) {
+                var tomorrowSunrise = Weather.getSunrise(pos, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
+                if (tomorrowSunrise != null) {
+                    _sunTime = tomorrowSunrise;
                 } else {
-                    _sunTime = _sunriseTime.add(_secsPerDay);
+                    _sunTime = _sunriseTime.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
                 }
-                _sunColor = Graphics.COLOR_YELLOW;
-            } else if (now.greaterThan(_sunriseTime)) {
-                _sunTime = _sunsetTime;
-                _sunColor = Graphics.COLOR_ORANGE;
             } else {
-                _sunTime = _sunriseTime;
-                _sunColor = Graphics.COLOR_YELLOW;
+                _sunTime = _sunriseTime.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
             }
-
-            var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
-            _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
+            _sunColor = Graphics.COLOR_YELLOW;
+        } else if (now.greaterThan(_sunriseTime)) {
+            _sunTime = _sunsetTime;
+            _sunColor = Graphics.COLOR_ORANGE;
+        } else {
+            _sunTime = _sunriseTime;
+            _sunColor = Graphics.COLOR_YELLOW;
         }
+
+        var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
+        _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
     }
 
     function initialize() {
@@ -76,14 +71,18 @@ class WfView extends WatchUi.WatchFace {
             _font = Graphics.FONT_NUMBER_THAI_HOT;
         }
 
-        if (Toybox has :Complications) {
-            _sunsetId = new Id(Complications.COMPLICATION_TYPE_SUNSET);
-        } else {
-            _sunsetId = 0 as Id;
-        }
-
         _timeHeight = Graphics.getFontHeight(_font) / 2;
         _halfTimeHeight = _timeHeight / 2;
+    }
+
+    //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
+    /// order of calls: onLayout()->onShow()->onUpdate()
+    // Load your resources here
+    function onLayout(dc as Dc) as Void {
+        _screenWidth = dc.getWidth();
+
+        WfApp.centerX = _screenWidth / 2;
+        WfApp.centerY = dc.getHeight() / 2;
 
         if (Graphics has :getVectorFont) {
             _dateY = WfApp.centerY + _halfTimeHeight;
@@ -92,18 +91,11 @@ class WfView extends WatchUi.WatchFace {
         }
 
         _timeTopLeft = WfApp.centerY - _halfTimeHeight - 10;
-        if(Toybox has :Complications || Toybox has :Weather) {
+        if(Toybox has :Weather) {
             _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
         } else {
             _sunY = 0;
         }
-    }
-
-    //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
-    /// order of calls: onLayout()->onShow()->onUpdate()
-    // Load your resources here
-    function onLayout(dc as Dc) as Void {
-        _screenWidth = dc.getWidth();
 
         // We can limit the number of calls to dc.clear() by only running it on layout and at the start of the day, because the text only gets wider throughout the day
         // Unfortunately, the device clears the screen before calling onUpdate in high power mode (i.e. on wrist gesture), so we can't check the minute to decide whether to exit onUpdate() early
@@ -137,8 +129,8 @@ class WfView extends WatchUi.WatchFace {
             // Get sunrise/sunset data
             if (Toybox has :Complications) {
                 var today = Time.today();
-                _sunriseTime = today.add(new Time.Duration(Complications.getComplication(WfApp.sunriseId).value as Number));
-                _sunsetTime = today.add(new Time.Duration(Complications.getComplication(_sunsetId).value as Number));
+                _sunriseTime = today.add(new Time.Duration(Complications.getComplication(new Id(Complications.COMPLICATION_TYPE_SUNRISE)).value as Number));
+                _sunsetTime = today.add(new Time.Duration(Complications.getComplication(new Id(Complications.COMPLICATION_TYPE_SUNSET)).value as Number));
 
                 // Got new sun data, so update the string
                 updateSunTime(now);
@@ -164,12 +156,13 @@ class WfView extends WatchUi.WatchFace {
             dc.clear();
         } else if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
-            if (Toybox has :Complications || Toybox has :Weather) {
+            if (Toybox has :Weather) {
                 updateSunTime(now);
             }
         }
 
         var timeString = date.hour + ":" + date.min.format("%02d");
+        // System.getDeviceSettings().isNightModeEnabled
         var moveBarLevel = ActivityMonitor.getInfo().moveBarLevel;
 
         // Draw the time with the move bar filling it up
@@ -197,7 +190,7 @@ class WfView extends WatchUi.WatchFace {
             dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
-        if(Toybox has :Complications || Toybox has :Weather) {
+        if (Toybox has :Weather) {
             // Draw the sun time and date
             dc.setColor(_sunColor, Graphics.COLOR_BLACK);
             dc.drawText(WfApp.centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
