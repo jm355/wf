@@ -24,7 +24,6 @@ class WfView extends WatchUi.WatchFace {
     var _sunString as String = "";
     var _sunColor as ColorValue = Graphics.COLOR_ORANGE;
 
-    var _dayString as String = "";
     var _dateString as String = "";
 
     var _font as VectorFont or FontType;
@@ -120,11 +119,10 @@ class WfView extends WatchUi.WatchFace {
         if (_day != date.day) {
             _day = date.day;
 
-            _dayString = date.day_of_week + " ";
-            _dateString = date.month + " " + date.day;
+            _dateString = " " + date.month + " " + date.day;
 
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
-            _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_MEDIUM)) / 2);
+            _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(date.day_of_week.toString(), Graphics.FONT_MEDIUM)) / 2);
 
             // Get sunrise/sunset data
             if (Toybox has :Complications) {
@@ -161,12 +159,13 @@ class WfView extends WatchUi.WatchFace {
             }
         }
 
-        var timeString = date.hour + ":" + date.min.format("%02d");
         // System.getDeviceSettings().isNightModeEnabled
         var moveBarLevel = ActivityMonitor.getInfo().moveBarLevel;
+        var timeString = date.hour + ":" + date.min.format("%02d");
 
         // Draw the time with the move bar filling it up
         if (moveBarLevel != null && moveBarLevel > ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
+            // todo if it doesn't have setclip, go digit by digit
             if (Dc has :setClip && moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
                 var clipScale = (moveBarLevel - 1) / 4.0f;
 
@@ -197,7 +196,7 @@ class WfView extends WatchUi.WatchFace {
         }
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_BLACK);
-        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dayString, Graphics.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, date.day_of_week, Graphics.TEXT_JUSTIFY_RIGHT);
 
         dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_BLACK);
         dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT);
