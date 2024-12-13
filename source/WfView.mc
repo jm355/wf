@@ -161,24 +161,47 @@ class WfView extends WatchUi.WatchFace {
 
         // System.getDeviceSettings().isNightModeEnabled
         var moveBarLevel = ActivityMonitor.getInfo().moveBarLevel;
-        var timeString = date.hour + ":" + date.min.format("%02d");
+        var timeString;
+        if (Dc has :setClip) {
+            timeString = date.hour + ":" + date.min.format("%02d");
+        } else {
+            timeString = date.hour.format("%02d") + ":" + date.min.format("%02d");
+        }
 
         // Draw the time with the move bar filling it up
         if (moveBarLevel != null && moveBarLevel > ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
             // todo if it doesn't have setclip, go digit by digit
-            if (Dc has :setClip && moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
-                var clipScale = (moveBarLevel - 1) / 4.0f;
+            if (moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
+                if (Dc has :setClip) {
+                    var clipScale = (moveBarLevel - 1) / 4.0f;
 
-                // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
-                dc.setClip(0, _timeTopLeft, _screenWidth, (_halfTimeHeight * (1 - clipScale)) + 10);
-                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                    // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
+                    dc.setClip(0, _timeTopLeft, _screenWidth, (_halfTimeHeight * (1 - clipScale)) + 10);
+                    dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-                // Draw the red part of the text
-                dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                dc.setClip(0, WfApp.centerY - (_halfTimeHeight * clipScale), _screenWidth, _timeHeight);
-                dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                    // Draw the red part of the text
+                    dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                    dc.setClip(0, WfApp.centerY - (_halfTimeHeight * clipScale), _screenWidth, _timeHeight);
+                    dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-                dc.clearClip();
+                    dc.clearClip();
+                } else {
+                    var redString = timeString.substring(ActivityMonitor.MOVE_BAR_LEVEL_MIN, moveBarLevel);
+                    var whiteString = timeString.substring(moveBarLevel, ActivityMonitor.MOVE_BAR_LEVEL_MAX);
+
+                    if (redString == null) {
+                        dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                    } else if (whiteString == null) {
+                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                        dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                    } else {
+                        var timeX = WfApp.centerX - ((dc.getTextWidthInPixels(whiteString, _font) - dc.getTextWidthInPixels(redString, _font)) / 2);
+
+                        dc.drawText(timeX, WfApp.centerY, _font, whiteString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                        dc.drawText(timeX, WfApp.centerY, _font, redString, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
+                    }
+                }
             } else {
                 // The move bar is full, don't mess with clipping and math when we can just draw the text in red
                 dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
