@@ -6,4 +6,4 @@ internal-mir
 gen
 *.der
 *.pem
-wf.prg*
+*.prg*
