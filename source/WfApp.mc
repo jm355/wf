@@ -15,11 +15,7 @@ class WfApp extends Application.AppBase {
 
     // Return the initial view of your application here
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        if (Toybox has :Complications) {
-            return [ new WfView(), new WfDeligate() ];
-        } else {
-            return [ new WfView() ];
-        }
+        return [ new WfView(), new WfDeligate() ];
     }
 }
 

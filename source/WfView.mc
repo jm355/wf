@@ -8,8 +8,7 @@ import Toybox.WatchUi;
 import Toybox.Weather;
 
 class WfView extends WatchUi.WatchFace {
-    static var centerX as Number;
-    static var centerY as Number;
+    static var centerXY as Number;
 
     var _dateX as Number;
     var _dateY as Number;
@@ -59,23 +58,13 @@ class WfView extends WatchUi.WatchFace {
     function initialize() {
         WatchFace.initialize();
 
-        if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
-            centerX = Rez.Styles.device_info.screenWidth as Number / 2;
-            centerY = Rez.Styles.device_info.screenHeight as Number / 2;
-        } else {
-            centerX = 0;
-            centerY = 0;
-        }
+        centerXY = Rez.Styles.device_info.screenWidth as Number / 2;
 
         // Hopefully this looks good on non-enduro devices
         // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
-        if (Graphics has :getVectorFont) {
-            var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 156});
-            if (tempFont != null) {
-                _font = tempFont;
-            } else {
-                _font = Graphics.FONT_NUMBER_THAI_HOT;
-            }
+        var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 156});
+        if (tempFont != null) {
+            _font = tempFont;
         } else {
             _font = Graphics.FONT_NUMBER_THAI_HOT;
         }
@@ -84,9 +73,9 @@ class WfView extends WatchUi.WatchFace {
         _halfTimeHeight = _timeHeight / 2;
 
         _dateX = 0;
-        _dateY = 0;
-        _sunY = 0;
-        _timeTopLeft = 0;
+        _dateY = centerXY + _halfTimeHeight;
+        _timeTopLeft = centerXY - _halfTimeHeight - 10;
+        _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
 
         _day = 0;
         _sunriseTime = new Time.Moment(0);
@@ -95,36 +84,18 @@ class WfView extends WatchUi.WatchFace {
         _sunString = "";
         _sunColor = 0 as ColorValue;
 
-        _dateString = _sunString;
+        _dateString = "";
     }
 
     //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
     /// order of calls: onLayout()->onShow()->onUpdate()
     // Load your resources here
     function onLayout(dc as Dc) as Void {
-        if (!(Rez has :Styles && Rez.Styles.device_info has :screenWidth)) {
-            centerX = dc.getWidth() / 2;
-            centerY = dc.getHeight() / 2;
-        }
-
-        if (Graphics has :getVectorFont) {
-            _dateY = centerY + _halfTimeHeight;
-        } else {
-            _dateY = centerY + _timeHeight;
-        }
-
-        _timeTopLeft = centerY - _halfTimeHeight - 10;
-        if(Toybox has :Weather) {
-            _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
-        } else {
-            _sunY = 0;
-        }
-
         // We can limit the number of calls to dc.clear() by only running it on layout and at the start of the day, because the text only gets wider throughout the day
         // Unfortunately, the device clears the screen before calling onUpdate in high power mode (i.e. on wrist gesture), so we can't check the minute to decide whether to exit onUpdate() early
         // On at least one device (Epix Pro), this isn't called when you go to the glance list and back to the watchface, resulting in a temporary screen where the text is drawn over the glance list
-        //dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        //dc.clear();
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
     }
 
     // Called when this View is brought to the foreground. Restore
@@ -139,7 +110,6 @@ class WfView extends WatchUi.WatchFace {
 
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.clear();
 
         // If the day has changed, get new data for the sunrise, sunset, and how to display the date
         if (_day != date.day) {
@@ -148,109 +118,56 @@ class WfView extends WatchUi.WatchFace {
             _dateString = " " + date.month + " " + date.day;
 
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
-            _dateX = centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(date.day_of_week.toString(), Graphics.FONT_MEDIUM)) / 2);
+            _dateX = centerXY - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(date.day_of_week.toString(), Graphics.FONT_MEDIUM)) / 2);
 
             // Get sunrise/sunset data
-            if (Toybox has :Complications) {
-                var today = Time.today();
-                _sunriseTime = today.add(new Time.Duration(Complications.getComplication(new Complications.Id(Complications.COMPLICATION_TYPE_SUNRISE)).value as Number));
-                _sunsetTime = today.add(new Time.Duration(Complications.getComplication(new Complications.Id(Complications.COMPLICATION_TYPE_SUNSET)).value as Number));
+            var today = Time.today();
+            _sunriseTime = today.add(new Time.Duration(Complications.getComplication(new Complications.Id(Complications.COMPLICATION_TYPE_SUNRISE)).value as Number));
+            _sunsetTime = today.add(new Time.Duration(Complications.getComplication(new Complications.Id(Complications.COMPLICATION_TYPE_SUNSET)).value as Number));
 
-                // Got new sun data, so update the string
-                updateSunTime(now);
-            } else if (Toybox has :Weather) {
-                var pos = Position.getInfo().position;
-                if (pos != null) {
-                    var sunriseTime = Weather.getSunrise(pos, now);
-                    var sunsetTime = Weather.getSunset(pos, now);
-                    if (sunriseTime != null) {
-                        _sunriseTime = sunriseTime;
-                    }
-                    if (sunsetTime != null) {
-                        _sunsetTime = sunsetTime;
-                    }
-                    if (_sunriseTime.value() != 0 && _sunsetTime.value() != 0) {
-                        // Got new sun data, so update the string
-                        updateSunTime(now);
-                    }
-                }
-            }
+            // Got new sun data, so update the string
+            updateSunTime(now);
 
             // Also clear the screen at the start of the day
-            //dc.clear();
+            dc.clear();
         } else if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
-            if (Toybox has :Weather) {
-                updateSunTime(now);
-            }
+            updateSunTime(now);
         }
 
         // System.getDeviceSettings().isNightModeEnabled
         var moveBarLevel = ActivityMonitor.getInfo().moveBarLevel;
-        var timeString;
-        if (Graphics.Dc has :setClip) {
-            timeString = date.hour + ":" + date.min.format("%02d");
-        } else {
-            timeString = date.hour.format("%02d") + ":" + date.min.format("%02d");
-        }
+        var timeString = date.hour + ":" + date.min.format("%02d");
 
         // Draw the time with the move bar filling it up
         if (moveBarLevel != null && moveBarLevel > ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
             // todo if it doesn't have setclip, go digit by digit
             if (moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
-                if (Graphics.Dc has :setClip) {
-                    var clipScale = (moveBarLevel - 1) / 4.0f;
+                var clipScale = (moveBarLevel - 1) / 4.0f;
 
-                    // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
-                    if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
-                        dc.setClip(0, _timeTopLeft, Rez.Styles.device_info.screenWidth as Number, (_halfTimeHeight * (1 - clipScale)) + 10);
-                    } else {
-                        dc.setClip(0, _timeTopLeft, dc.getWidth(), (_halfTimeHeight * (1 - clipScale)) + 10);
-                    }
-                    dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
+                dc.setClip(0, _timeTopLeft, Rez.Styles.device_info.screenWidth as Number, (_halfTimeHeight * (1 - clipScale)) + 10);
+                dc.drawText(centerXY, centerXY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-                    // Draw the red part of the text
-                    dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                    if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
-                        dc.setClip(0, centerY - (_halfTimeHeight * clipScale), Rez.Styles.device_info.screenWidth as Number, _timeHeight);
-                    } else {
-                        dc.setClip(0, centerY - (_halfTimeHeight * clipScale), dc.getWidth(), _timeHeight);
-                    }
-                    dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                // Draw the red part of the text
+                dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                dc.setClip(0, centerXY - (_halfTimeHeight * clipScale), Rez.Styles.device_info.screenWidth as Number, _timeHeight);
+                dc.drawText(centerXY, centerXY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
-                    dc.clearClip();
-                } else {
-                    var redString = timeString.substring(ActivityMonitor.MOVE_BAR_LEVEL_MIN, moveBarLevel);
-                    var whiteString = timeString.substring(moveBarLevel, ActivityMonitor.MOVE_BAR_LEVEL_MAX);
-
-                    if (redString == null) {
-                        dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                    } else if (whiteString == null) {
-                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                        dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                    } else {
-                        var timeX = centerX - ((dc.getTextWidthInPixels(whiteString, _font) - dc.getTextWidthInPixels(redString, _font)) / 2);
-
-                        dc.drawText(timeX, centerY, _font, whiteString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
-                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                        dc.drawText(timeX, centerY, _font, redString, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
-                    }
-                }
+                dc.clearClip();
             } else {
                 // The move bar is full, don't mess with clipping and math when we can just draw the text in red
                 dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                dc.drawText(centerXY, centerXY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             }
         } else {
             // The move bar is empty, don't mess with clipping and math when we can just draw the text in white
-            dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(centerXY, centerXY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
-        if (Toybox has :Weather) {
-            // Draw the sun time and date
-            dc.setColor(_sunColor, Graphics.COLOR_BLACK);
-            dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
-        }
+        // Draw the sun time and date
+        dc.setColor(_sunColor, Graphics.COLOR_BLACK);
+        dc.drawText(centerXY, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_BLACK);
         dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, date.day_of_week, Graphics.TEXT_JUSTIFY_RIGHT);
