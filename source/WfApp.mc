@@ -3,9 +3,6 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 class WfApp extends Application.AppBase {
-    static var centerX as Number = 0;
-    static var centerY as Number = 0;
-
     function initialize() {
         AppBase.initialize();
     }
