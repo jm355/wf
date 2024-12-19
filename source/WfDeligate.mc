@@ -8,9 +8,9 @@ class WfDeligate extends WatchUi.WatchFaceDelegate {
 
     function onPress(evt as ClickEvent) {
         var coords = evt.getCoordinates();
-        if(coords[1] < WfView.centerY) {
+        if(coords[1] < WfView.centerXY) {
             Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_SUNRISE));
-        } else if(coords[0] < WfView.centerX) {
+        } else if(coords[0] < WfView.centerXY) {
             Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_CURRENT_WEATHER));
         } else {
             Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS));
