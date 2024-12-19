@@ -106,7 +106,6 @@ class WfView extends WatchUi.WatchFace {
 
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        //dc.clear();
 
         // If the day has changed, get new data for the sunrise, sunset, and how to display the date
         if (_day != date.day) {
@@ -124,9 +123,6 @@ class WfView extends WatchUi.WatchFace {
 
             // Got new sun data, so update the string
             updateSunTime(now);
-
-            // Also clear the screen at the start of the day
-            dc.clear();
         } else if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
             updateSunTime(now);
