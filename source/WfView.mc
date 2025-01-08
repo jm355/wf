@@ -9,8 +9,6 @@ import Toybox.Weather;
 
 class WfView extends WatchUi.WatchFace {
     var _dateX as Number;
-    var _dateY as Number;
-    var _sunY as Number;
     var _timeTopLeft as Number;
 
     var _timeHeight as Number;
@@ -46,18 +44,9 @@ class WfView extends WatchUi.WatchFace {
         _timeHeight = Graphics.getFontHeight(_font) / 2;
         _halfTimeHeight = _timeHeight / 2;
 
-        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenHeight) {
-            var centerY = Rez.Styles.device_info.screenHeight as Number / 2;
-
-            var quarterScreenHeight = centerY / 2;
-
-            _dateY = centerY + quarterScreenHeight;
-            _sunY = centerY - quarterScreenHeight;
-
-            _timeTopLeft = centerY - _halfTimeHeight - 10;
+        if (Rez has :Styles) {
+            _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - _halfTimeHeight - 10;
         } else {
-            _dateY = 0;
-            _sunY = 0;
             _timeTopLeft = 0;
         }
 
@@ -76,18 +65,7 @@ class WfView extends WatchUi.WatchFace {
     //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
     /// order of calls: onLayout()->onShow()->onUpdate()
     // Load your resources here
-    function onLayout(dc as Dc) as Void {
-        if (!(Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenHeight)) {
-            var centerY = dc.getHeight() / 2;
-
-            var quarterScreenHeight = centerY / 2;
-
-            _dateY = centerY + quarterScreenHeight;
-            _sunY = centerY - quarterScreenHeight;
-
-            _timeTopLeft = centerY - _halfTimeHeight - 10;
-        }
-    }
+    //function onLayout(dc as Dc) as Void {}
 
     // Called when this View is brought to the foreground. Restore
     // the state of this View and prepare it to be shown. This includes
@@ -99,17 +77,26 @@ class WfView extends WatchUi.WatchFace {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
 
-        var screenWidth, centerX, centerY;
-        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth && Rez.Styles.device_info has :screenHeight) {
+        var screenWidth, centerX, centerY, dateY, sunY;
+        if (Rez has :Styles) {
             screenWidth = Rez.Styles.device_info.screenWidth as Number;
             centerX = screenWidth / 2;
             centerY = Rez.Styles.device_info.screenHeight as Number / 2;
+
+            var quarterScreenHeight = centerY / 2;
+            dateY = centerY + quarterScreenHeight;
+            sunY = centerY - quarterScreenHeight;
         } else {
             screenWidth = dc.getWidth();
             centerX = screenWidth / 2;
             centerY = dc.getHeight() / 2;
-        }
 
+            _timeTopLeft = centerY - _halfTimeHeight - 10;
+
+            var quarterScreenHeight = centerY / 2;
+            dateY = centerY + quarterScreenHeight;
+            sunY = centerY - quarterScreenHeight;
+        }
 
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
@@ -143,37 +130,6 @@ class WfView extends WatchUi.WatchFace {
                 }
             }
         }
-
-        if (Toybox has :Weather && Weather has :getSunrise) {
-            if (now.greaterThan(_sunTime)) {
-            // The upcoming sun event has passed, update the string.
-                if (now.greaterThan(_sunsetTime)) {
-                    var pos = Position.getInfo().position;
-                    if (pos != null) {
-                        var tomorrowSunrise = Weather.getSunrise(pos, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
-                        if (tomorrowSunrise != null) {
-                            _sunTime = tomorrowSunrise;
-                        } else {
-                            _sunTime = _sunriseTime.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
-                        }
-                    } else {
-                        _sunTime = _sunriseTime.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
-                    }
-                    _sunColor = Graphics.COLOR_YELLOW;
-                } else if (now.greaterThan(_sunriseTime)) {
-                    _sunTime = _sunsetTime;
-                    _sunColor = Graphics.COLOR_ORANGE;
-                } else {
-                    _sunTime = _sunriseTime;
-                    _sunColor = Graphics.COLOR_YELLOW;
-                }
-
-                var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
-                _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
-            }
-        }
-
-        // System.getDeviceSettings().isNightModeEnabled
 
         var moveBarLevel = ActivityMonitor.getInfo().moveBarLevel;
         var timeString;
@@ -228,15 +184,42 @@ class WfView extends WatchUi.WatchFace {
         }
 
         if (Toybox has :Weather && Weather has :getSunrise) {
+            if (now.greaterThan(_sunTime)) {
+            // The upcoming sun event has passed, update the string.
+                if (now.greaterThan(_sunsetTime)) {
+                    var pos = Position.getInfo().position;
+                    if (pos != null) {
+                        var tomorrowSunrise = Weather.getSunrise(pos, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
+                        if (tomorrowSunrise != null) {
+                            _sunTime = tomorrowSunrise;
+                        } else {
+                            _sunTime = _sunriseTime.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
+                        }
+                    } else {
+                        _sunTime = _sunriseTime.add(new Time.Duration(Gregorian.SECONDS_PER_DAY));
+                    }
+                    _sunColor = Graphics.COLOR_YELLOW;
+                } else if (now.greaterThan(_sunriseTime)) {
+                    _sunTime = _sunsetTime;
+                    _sunColor = Graphics.COLOR_ORANGE;
+                } else {
+                    _sunTime = _sunriseTime;
+                    _sunColor = Graphics.COLOR_YELLOW;
+                }
+
+                var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
+                _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
+            }
+
             // Draw the sun time and date
             dc.setColor(_sunColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(centerX, sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, date.day_of_week, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(_dateX, dateY, Graphics.FONT_MEDIUM, date.day_of_week, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(_dateX, dateY, Graphics.FONT_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 }
