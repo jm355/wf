@@ -8,9 +8,6 @@ import Toybox.WatchUi;
 import Toybox.Weather;
 
 class WfView extends WatchUi.WatchFace {
-    static var centerX as Number;
-    static var centerY as Number;
-
     var _dateX as Number;
     var _dateY as Number;
     var _sunY as Number;
@@ -49,9 +46,8 @@ class WfView extends WatchUi.WatchFace {
         _timeHeight = Graphics.getFontHeight(_font) / 2;
         _halfTimeHeight = _timeHeight / 2;
 
-        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth && Rez.Styles.device_info has :screenHeight) {
-            centerX = Rez.Styles.device_info.screenWidth as Number / 2;
-            centerY = Rez.Styles.device_info.screenHeight as Number / 2;
+        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenHeight) {
+            var centerY = Rez.Styles.device_info.screenHeight as Number / 2;
 
             var quarterScreenHeight = centerY / 2;
 
@@ -60,9 +56,6 @@ class WfView extends WatchUi.WatchFace {
 
             _timeTopLeft = centerY - _halfTimeHeight - 10;
         } else {
-            centerX = 0;
-            centerY = 0;
-
             _dateY = 0;
             _sunY = 0;
             _timeTopLeft = 0;
@@ -84,9 +77,8 @@ class WfView extends WatchUi.WatchFace {
     /// order of calls: onLayout()->onShow()->onUpdate()
     // Load your resources here
     function onLayout(dc as Dc) as Void {
-        if (!(Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth && Rez.Styles.device_info has :screenHeight)) {
-            centerX = dc.getWidth() / 2;
-            centerY = dc.getHeight() / 2;
+        if (!(Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenHeight)) {
+            var centerY = dc.getHeight() / 2;
 
             var quarterScreenHeight = centerY / 2;
 
@@ -107,6 +99,18 @@ class WfView extends WatchUi.WatchFace {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
 
+        var screenWidth, centerX, centerY;
+        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth && Rez.Styles.device_info has :screenHeight) {
+            screenWidth = Rez.Styles.device_info.screenWidth as Number;
+            centerX = screenWidth / 2;
+            centerY = Rez.Styles.device_info.screenHeight as Number / 2;
+        } else {
+            screenWidth = dc.getWidth();
+            centerX = screenWidth / 2;
+            centerY = dc.getHeight() / 2;
+        }
+
+
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.clear();
@@ -118,11 +122,7 @@ class WfView extends WatchUi.WatchFace {
             _dateString = " " + date.month + " " + date.day;
 
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
-            if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                _dateX = (Rez.Styles.device_info.screenWidth as Number / 2) - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(date.day_of_week.toString(), Graphics.FONT_MEDIUM)) / 2);
-            } else {
-                _dateX = centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(date.day_of_week.toString(), Graphics.FONT_MEDIUM)) / 2);
-            }
+            _dateX = centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(date.day_of_week.toString(), Graphics.FONT_MEDIUM)) / 2);
 
             // Get sunrise/sunset data
             if (Toybox has :Complications) {
@@ -190,23 +190,13 @@ class WfView extends WatchUi.WatchFace {
                     var clipScale = (moveBarLevel - 1) / 4.0f;
 
                     // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
-                    if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                        dc.setClip(0, _timeTopLeft, Rez.Styles.device_info.screenWidth as Number, (_halfTimeHeight * (1 - clipScale)) + 10);
-                        dc.drawText(Rez.Styles.device_info.screenWidth as Number / 2, Rez.Styles.device_info.screenHeight as Number / 2, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                    } else {
-                        dc.setClip(0, _timeTopLeft, dc.getWidth(), (_halfTimeHeight * (1 - clipScale)) + 10);
-                        dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                    }
+                    dc.setClip(0, _timeTopLeft, screenWidth, (_halfTimeHeight * (1 - clipScale)) + 10);
+                    dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                     // Draw the red part of the text
                     dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-                    if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                        dc.setClip(0, (Rez.Styles.device_info.screenHeight as Number / 2) - (_halfTimeHeight * clipScale), Rez.Styles.device_info.screenWidth as Number, _timeHeight);
-                        dc.drawText(Rez.Styles.device_info.screenWidth as Number / 2, Rez.Styles.device_info.screenHeight as Number / 2, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                    } else {
-                        dc.setClip(0, centerY - (_halfTimeHeight * clipScale), dc.getWidth(), _timeHeight);
-                        dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                    }
+                    dc.setClip(0, centerY - (_halfTimeHeight * clipScale), screenWidth, _timeHeight);
+                    dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                     dc.clearClip();
                 } else {
@@ -214,63 +204,33 @@ class WfView extends WatchUi.WatchFace {
                     var whiteString = timeString.substring(moveBarLevel, ActivityMonitor.MOVE_BAR_LEVEL_MAX);
 
                     if (redString == null) {
-                        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                            dc.drawText(Rez.Styles.device_info.screenWidth as Number / 2, Rez.Styles.device_info.screenHeight as Number / 2, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                        } else {
-                            dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                        }
+                        dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
                     } else if (whiteString == null) {
                         dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-                        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                            dc.drawText(Rez.Styles.device_info.screenWidth as Number / 2, Rez.Styles.device_info.screenHeight as Number / 2, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                        } else {
-                            dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                        }
+                        dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
                     } else {
-                        var timeX;
-                        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                            timeX = (Rez.Styles.device_info.screenWidth as Number / 2) - ((dc.getTextWidthInPixels(whiteString, _font) - dc.getTextWidthInPixels(redString, _font)) / 2);
-                        } else {
-                            timeX = centerX - ((dc.getTextWidthInPixels(whiteString, _font) - dc.getTextWidthInPixels(redString, _font)) / 2);
-                        }
+                        var timeX = centerX - ((dc.getTextWidthInPixels(whiteString, _font) - dc.getTextWidthInPixels(redString, _font)) / 2);
 
-                        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                            dc.drawText(timeX, Rez.Styles.device_info.screenHeight as Number / 2, _font, whiteString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
-                            dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-                            dc.drawText(timeX, Rez.Styles.device_info.screenHeight as Number / 2, _font, redString, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
-                        } else {
-                            dc.drawText(timeX, centerY, _font, whiteString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
-                            dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-                            dc.drawText(timeX, centerY, _font, redString, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
-                        }
+                        dc.drawText(timeX, centerY, _font, whiteString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+
+                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+                        dc.drawText(timeX, centerY, _font, redString, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
                     }
                 }
             } else {
                 // The move bar is full, don't mess with clipping and math when we can just draw the text in red
                 dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-                if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                    dc.drawText(Rez.Styles.device_info.screenWidth as Number / 2, Rez.Styles.device_info.screenHeight as Number / 2, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                } else {
-                    dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-                }
+                dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             }
         } else {
             // The move bar is empty, don't mess with clipping and math when we can just draw the text in white
-            if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                dc.drawText(Rez.Styles.device_info.screenWidth as Number / 2, Rez.Styles.device_info.screenHeight as Number / 2, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-            } else {
-                dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-            }
+            dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         if (Toybox has :Weather && Weather has :getSunrise) {
             // Draw the sun time and date
             dc.setColor(_sunColor, Graphics.COLOR_TRANSPARENT);
-            if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
-                dc.drawText(Rez.Styles.device_info.screenWidth as Number / 2, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-            } else {
-                dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-            }
+            dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);

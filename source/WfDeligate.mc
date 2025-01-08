@@ -1,5 +1,6 @@
 import Toybox.Complications;
 import Toybox.WatchUi;
+import Toybox.System;
 
 class WfDeligate extends WatchUi.WatchFaceDelegate {
 	function initialize() {
@@ -17,14 +18,16 @@ class WfDeligate extends WatchUi.WatchFaceDelegate {
                 Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS));
             }
         } else {
-            if(coords[1] < WfView.centerY) {
+            var settings = System.getDeviceSettings();
+            if(coords[1] < (settings.screenHeight / 2)) {
                 Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_SUNRISE));
-            } else if(coords[0] < WfView.centerX) {
+            } else if(coords[0] < (settings.screenWidth / 2)) {
                 Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_CURRENT_WEATHER));
             } else {
                 Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS));
             }
         }
+
         return true;
     }
 }
