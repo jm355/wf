@@ -53,18 +53,17 @@ class WfView extends WatchUi.WatchFace {
             centerX = Rez.Styles.device_info.screenWidth as Number / 2;
             centerY = Rez.Styles.device_info.screenHeight as Number / 2;
 
-            if (Graphics has :getVectorFont) {
-                _dateY = centerY + _halfTimeHeight;
-            } else {
-                _dateY = centerY + _timeHeight;
-            }
+            var quarterScreenHeight = Rez.Styles.device_info.screenHeight as Number / 4;
 
-            _timeTopLeft = centerY - _halfTimeHeight - 10;
+            _dateY = centerY + quarterScreenHeight;
+
             if(Toybox has :Weather && Weather has :getSunrise) {
-                _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
+                _sunY = centerY - quarterScreenHeight;
             } else {
                 _sunY = 0;
             }
+
+            _timeTopLeft = centerY - _halfTimeHeight - 10;
         } else {
             centerX = 0;
             centerY = 0;
@@ -94,16 +93,15 @@ class WfView extends WatchUi.WatchFace {
             centerX = dc.getWidth() / 2;
             centerY = dc.getHeight() / 2;
 
-            if (Graphics has :getVectorFont) {
-                _dateY = centerY + _halfTimeHeight;
-            } else {
-                _dateY = centerY + _timeHeight;
-            }
+            var quarterScreenHeight = centerY / 2;
 
-            _timeTopLeft = centerY - _halfTimeHeight - 10;
+            _dateY = centerY + quarterScreenHeight;
+            
             if(Toybox has :Weather && Weather has :getSunrise) {
-                _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
+                _sunY = centerY - quarterScreenHeight;
             }
+            
+            _timeTopLeft = centerY - _halfTimeHeight - 10;
         }
     }
 
@@ -243,13 +241,13 @@ class WfView extends WatchUi.WatchFace {
         if (Toybox has :Weather && Weather has :getSunrise) {
             // Draw the sun time and date
             dc.setColor(_sunColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
+            dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, date.day_of_week, Graphics.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, date.day_of_week, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 }
