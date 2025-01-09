@@ -11,8 +11,7 @@ class WfView extends WatchUi.WatchFace {
     var _dateX as Number;
     var _timeTopLeft as Number;
 
-    var _timeHeight as Number;
-    var _halfTimeHeight as Number;
+    var _step as Number;
 
     var _day as Number;
     var _sunriseTime as Moment;
@@ -41,11 +40,11 @@ class WfView extends WatchUi.WatchFace {
             _font = Graphics.FONT_NUMBER_THAI_HOT;
         }
 
-        _timeHeight = Graphics.getFontHeight(_font) / 2;
-        _halfTimeHeight = _timeHeight / 2;
+        var halfTimeHeight = Graphics.getFontHeight(_font) / 4;
+        _step = halfTimeHeight / 4;
 
         if (Rez has :Styles) {
-            _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - _halfTimeHeight - 10;
+            _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - halfTimeHeight - 4;
         } else {
             _timeTopLeft = 0;
         }
@@ -91,7 +90,9 @@ class WfView extends WatchUi.WatchFace {
             centerX = screenWidth / 2;
             centerY = dc.getHeight() / 2;
 
-            _timeTopLeft = centerY - _halfTimeHeight - 10;
+            if (Graphics.Dc has :setClip) {
+                _timeTopLeft = centerY - (_step * 4) - 4;
+            }
 
             var quarterScreenHeight = centerY / 2;
             dateY = centerY + quarterScreenHeight;
@@ -143,15 +144,16 @@ class WfView extends WatchUi.WatchFace {
         if (moveBarLevel != null && moveBarLevel > ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
             if (moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
                 if (Graphics.Dc has :setClip) {
-                    var clipScale = (moveBarLevel - 1) / 4.0f;
+                    // _timeTopLeft has the 4 pixel offset already accounted for
+                    var offset = ((ActivityMonitor.MOVE_BAR_LEVEL_MAX - moveBarLevel) * _step) + 4;
 
-                    // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
-                    dc.setClip(0, _timeTopLeft, screenWidth, (_halfTimeHeight * (1 - clipScale)) + 10);
+                    // Draw the white part of the text.
+                    dc.setClip(0, _timeTopLeft, screenWidth, offset);
                     dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                     // Draw the red part of the text
                     dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-                    dc.setClip(0, centerY - (_halfTimeHeight * clipScale), screenWidth, _timeHeight);
+                    dc.setClip(0, _timeTopLeft + offset, screenWidth, screenWidth);
                     dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                     dc.clearClip();
