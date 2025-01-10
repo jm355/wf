@@ -131,17 +131,22 @@ class WfView extends WatchUi.WatchFace {
             if (hasWeather) {
                 var pos = Position.getInfo().position;
 
-                if (pos == null) {
-                    pos = new Location({:latitude => 0, :longitude => 0, :format => :degrees});
-                }
+                if (pos != null) {
+                    var sunriseTime = Weather.getSunrise(pos, now);
+                    if (sunriseTime != null) {
+                        _sunriseTime = sunriseTime;
 
-                var sunriseTime = Weather.getSunrise(pos, now);
-                var sunsetTime = Weather.getSunset(pos, now);
-                var nextSunriseTime = Weather.getSunrise(pos, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
-                if (sunriseTime != null && sunsetTime != null && nextSunriseTime != null) {
-                    _sunriseTime = sunriseTime;
-                    _sunsetTime = sunsetTime;
-                    _nextSunriseTime = nextSunriseTime;
+                        var sunsetTime = Weather.getSunset(pos, now);
+                        if (sunsetTime != null) {
+                            _sunsetTime = sunsetTime;
+
+                            var nextSunriseTime = Weather.getSunrise(pos, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
+
+                            if (nextSunriseTime != null) {
+                                _nextSunriseTime = nextSunriseTime;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -150,13 +155,8 @@ class WfView extends WatchUi.WatchFace {
             if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
                 if (now.greaterThan(_sunsetTime)) {
-                    if(_sunsetTime.value() == 0) {
-                        //re-retrieve sun data next update
-                        _day = 0;
-                    } else {
-                        _sunTime = _nextSunriseTime;
-                        _sunColor = Graphics.COLOR_YELLOW;
-                    }
+                    _sunTime = _nextSunriseTime;
+                    _sunColor = Graphics.COLOR_YELLOW;
                 } else if (now.greaterThan(_sunriseTime)) {
                     _sunTime = _sunsetTime;
                     _sunColor = Graphics.COLOR_ORANGE;
