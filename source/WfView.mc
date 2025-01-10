@@ -58,7 +58,7 @@ class WfView extends WatchUi.WatchFace {
         if (hasStyles) {
             _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - halfTimeHeight - 4;
         } else {
-            _timeTopLeft = _dateX;
+            _timeTopLeft = (Toybox.System.getDeviceSettings().screenHeight / 2) - halfTimeHeight - 4;
         }
 
 
@@ -109,10 +109,6 @@ class WfView extends WatchUi.WatchFace {
             screenWidth = dc.getWidth();
             centerX = screenWidth / 2;
             centerY = dc.getHeight() / 2;
-
-            if (hasSetClip) {
-                _timeTopLeft = centerY - (_step * 4) - 4;
-            }
         }
 
         var quarterScreenHeight = centerY / 2;
@@ -146,7 +142,6 @@ class WfView extends WatchUi.WatchFace {
                             _sunsetTime = sunsetTime;
 
                             var nextSunriseTime = Weather.getSunrise(pos, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
-
                             if (nextSunriseTime != null) {
                                 _nextSunriseTime = nextSunriseTime;
                             }
