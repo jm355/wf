@@ -28,9 +28,16 @@ class WfView extends WatchUi.WatchFace {
     function initialize() {
         WatchFace.initialize();
 
+        var hasGetVectorFont =
+            Graphics has :getVectorFont;
+            //true;
+        var hasStyles =
+            Rez has :Styles;
+            //true;
+
         // Hopefully this looks good on non-enduro devices
         // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
-        if (Graphics has :getVectorFont) {
+        if (hasGetVectorFont) {
             var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 156});
             if (tempFont != null) {
                 _font = tempFont;
@@ -46,7 +53,7 @@ class WfView extends WatchUi.WatchFace {
 
         _dateX = 0;
 
-        if (Rez has :Styles) {
+        if (hasStyles) {
             _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - halfTimeHeight - 4;
         } else {
             _timeTopLeft = _dateX;
@@ -78,29 +85,34 @@ class WfView extends WatchUi.WatchFace {
     function onUpdate(dc as Dc) as Void {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
+        var hasSetClip =
+            Graphics.Dc has :setClip;
+            //true;
+        var hasStyles =
+            Rez has :Styles;
+            //true;
+        var hasWeather =
+            Toybox has :Weather && Weather has :getSunrise;
+            //true;
 
         var screenWidth, centerX, centerY, dateY, sunY;
-        if (Rez has :Styles) {
+        if (hasStyles) {
             screenWidth = Rez.Styles.device_info.screenWidth as Number;
             centerX = screenWidth / 2;
             centerY = Rez.Styles.device_info.screenHeight as Number / 2;
-
-            var quarterScreenHeight = centerY / 2;
-            dateY = centerY + quarterScreenHeight;
-            sunY = centerY - quarterScreenHeight;
         } else {
             screenWidth = dc.getWidth();
             centerX = screenWidth / 2;
             centerY = dc.getHeight() / 2;
 
-            if (Graphics.Dc has :setClip) {
+            if (hasSetClip) {
                 _timeTopLeft = centerY - (_step * 4) - 4;
             }
-
-            var quarterScreenHeight = centerY / 2;
-            dateY = centerY + quarterScreenHeight;
-            sunY = centerY - quarterScreenHeight;
         }
+
+        var quarterScreenHeight = centerY / 2;
+        dateY = centerY + quarterScreenHeight;
+        sunY = centerY - quarterScreenHeight;
 
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
@@ -116,7 +128,7 @@ class WfView extends WatchUi.WatchFace {
             _dateX = centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(date.day_of_week.toString(), Graphics.FONT_MEDIUM)) / 2);
 
             // Get sunrise/sunset data
-            if (Toybox has :Weather && Weather has :getSunrise) {
+            if (hasWeather) {
                 var pos = Position.getInfo().position;
 
                 if (pos == null) {
@@ -134,12 +146,12 @@ class WfView extends WatchUi.WatchFace {
             }
         }
 
-        if (Toybox has :Weather && Weather has :getSunrise) {
+        if (hasWeather) {
             if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
                 if (now.greaterThan(_sunsetTime)) {
-                    //re-retrieve sun data next update
                     if(_sunsetTime.value() == 0) {
+                        //re-retrieve sun data next update
                         _day = 0;
                     } else {
                         _sunTime = _nextSunriseTime;
@@ -160,7 +172,7 @@ class WfView extends WatchUi.WatchFace {
 
         var moveBarLevel = ActivityMonitor.getInfo().moveBarLevel;
         var timeString;
-        if (Graphics.Dc has :setClip) {
+        if (hasSetClip) {
             timeString = date.hour + ":" + date.min.format("%02d");
         } else {
             timeString = date.hour.format("%02d") + ":" + date.min.format("%02d");
@@ -169,7 +181,7 @@ class WfView extends WatchUi.WatchFace {
         // Draw the time with the move bar filling it up
         if (moveBarLevel != null && moveBarLevel > ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
             if (moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
-                if (Graphics.Dc has :setClip) {
+                if (hasSetClip) {
                     // _timeTopLeft has the 4 pixel offset already accounted for
                     var offset = ((ActivityMonitor.MOVE_BAR_LEVEL_MAX - moveBarLevel) * _step) + 4;
 
