@@ -30,32 +30,6 @@ class WfView extends WatchUi.WatchFace {
 
     var _font as VectorFont or FontType;
 
-    function updateSunTime(now as Moment) as Void {
-        if (now.greaterThan(_sunsetTime)) {
-            var pos = Position.getInfo().position;
-            if (pos != null) {
-                var tomorrowSunrise = Weather.getSunrise(pos, now.add(new Time.Duration(Time.Gregorian.SECONDS_PER_DAY)));
-                if (tomorrowSunrise != null) {
-                    _sunTime = tomorrowSunrise;
-                } else {
-                    _sunTime = _sunriseTime.add(new Time.Duration(Time.Gregorian.SECONDS_PER_DAY));
-                }
-            } else {
-                _sunTime = _sunriseTime.add(new Time.Duration(Time.Gregorian.SECONDS_PER_DAY));
-            }
-            _sunColor = Graphics.COLOR_YELLOW;
-        } else if (now.greaterThan(_sunriseTime)) {
-            _sunTime = _sunsetTime;
-            _sunColor = Graphics.COLOR_ORANGE;
-        } else {
-            _sunTime = _sunriseTime;
-            _sunColor = Graphics.COLOR_YELLOW;
-        }
-
-        var gregorianSunTime = Time.Gregorian.info(_sunTime, Time.FORMAT_SHORT);
-        _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
-    }
-
     function initialize() {
         WatchFace.initialize();
 
@@ -86,7 +60,7 @@ class WfView extends WatchUi.WatchFace {
             }
 
             _timeTopLeft = centerY - _halfTimeHeight - 10;
-            if(Toybox has :Weather) {
+            if(Toybox has :Weather && Weather has :getSunrise) {
                 _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
             } else {
                 _sunY = 0;
@@ -130,7 +104,7 @@ class WfView extends WatchUi.WatchFace {
             if(Toybox has :Weather && Weather has :getSunrise) {
                 _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
             }
-            }
+        }
     }
 
 //todo venu has sun overlapping time
@@ -165,9 +139,6 @@ class WfView extends WatchUi.WatchFace {
                 var today = Time.today();
                 _sunriseTime = today.add(new Time.Duration(Complications.getComplication(new Complications.Id(Complications.COMPLICATION_TYPE_SUNRISE)).value as Number));
                 _sunsetTime = today.add(new Time.Duration(Complications.getComplication(new Complications.Id(Complications.COMPLICATION_TYPE_SUNSET)).value as Number));
-
-                // Got new sun data, so update the string
-                updateSunTime(now);
             } else if (Toybox has :Weather && Weather has :getSunrise) {
                 var pos = Position.getInfo().position;
                 if (pos != null) {
@@ -179,16 +150,36 @@ class WfView extends WatchUi.WatchFace {
                     if (sunsetTime != null) {
                         _sunsetTime = sunsetTime;
                     }
-                    if (_sunriseTime.value() != 0 && _sunsetTime.value() != 0) {
-                        // Got new sun data, so update the string
-                        updateSunTime(now);
-                    }
                 }
             }
-        } else if (now.greaterThan(_sunTime)) {
+        }
+
+        if (Toybox has :Weather && Weather has :getSunrise) {
+            if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
-            if (Toybox has :Weather && Weather has :getSunrise) {
-                updateSunTime(now);
+                if (now.greaterThan(_sunsetTime)) {
+                    var pos = Position.getInfo().position;
+                    if (pos != null) {
+                        var tomorrowSunrise = Weather.getSunrise(pos, now.add(new Time.Duration(Time.Gregorian.SECONDS_PER_DAY)));
+                        if (tomorrowSunrise != null) {
+                            _sunTime = tomorrowSunrise;
+                        } else {
+                            _sunTime = _sunriseTime.add(new Time.Duration(Time.Gregorian.SECONDS_PER_DAY));
+                        }
+                    } else {
+                        _sunTime = _sunriseTime.add(new Time.Duration(Time.Gregorian.SECONDS_PER_DAY));
+                    }
+                    _sunColor = Graphics.COLOR_YELLOW;
+                } else if (now.greaterThan(_sunriseTime)) {
+                    _sunTime = _sunsetTime;
+                    _sunColor = Graphics.COLOR_ORANGE;
+                } else {
+                    _sunTime = _sunriseTime;
+                    _sunColor = Graphics.COLOR_YELLOW;
+                }
+
+                var gregorianSunTime = Time.Gregorian.info(_sunTime, Time.FORMAT_SHORT);
+                _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
             }
         }
 
@@ -217,7 +208,7 @@ class WfView extends WatchUi.WatchFace {
                     dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                     // Draw the red part of the text
-                    dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                    dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
                     if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
                         dc.setClip(0, centerY - (_halfTimeHeight * clipScale), Rez.Styles.device_info.screenWidth as Number, _timeHeight);
                     } else {
@@ -233,19 +224,19 @@ class WfView extends WatchUi.WatchFace {
                     if (redString == null) {
                         dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
                     } else if (whiteString == null) {
-                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
                         dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
                     } else {
                         var timeX = centerX - ((dc.getTextWidthInPixels(whiteString, _font) - dc.getTextWidthInPixels(redString, _font)) / 2);
 
                         dc.drawText(timeX, centerY, _font, whiteString, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
-                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                        dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
                         dc.drawText(timeX, centerY, _font, redString, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
                     }
                 }
             } else {
                 // The move bar is full, don't mess with clipping and math when we can just draw the text in red
-                dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
+                dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
                 dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
             }
         } else {
@@ -255,14 +246,14 @@ class WfView extends WatchUi.WatchFace {
 
         if (Toybox has :Weather && Weather has :getSunrise) {
             // Draw the sun time and date
-            dc.setColor(_sunColor, Graphics.COLOR_BLACK);
+            dc.setColor(_sunColor, Graphics.COLOR_TRANSPARENT);
             dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
         }
 
-        dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_BLACK);
+        dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, date.day_of_week, Graphics.TEXT_JUSTIFY_RIGHT);
 
-        dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_BLACK);
+        dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
         dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT);
     }
 }
