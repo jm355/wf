@@ -107,10 +107,6 @@ class WfView extends WatchUi.WatchFace {
         }
     }
 
-//todo venu has sun overlapping time
-//instinct crossover has built in hands, disable
-//instincts, descent g1 are b/w, don't show date. disable
-
     // Called when this View is brought to the foreground. Restore
     // the state of this View and prepare it to be shown. This includes
     // loading resources into memory.
