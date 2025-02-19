@@ -9,7 +9,7 @@ class WfDeligate extends WatchUi.WatchFaceDelegate {
 
     function onPress(evt as ClickEvent) {
         var coords = evt.getCoordinates();
-        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth && Rez.Styles.device_info has :screenHeight) {
+        if (Rez has :Styles) {
             if(coords[1] < Rez.Styles.device_info.screenHeight as Number / 2) {
                 Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_SUNRISE));
             } else if(coords[0] < Rez.Styles.device_info.screenWidth as Number / 2) {
