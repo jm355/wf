@@ -9,8 +9,10 @@ class WfDeligate extends WatchUi.WatchFaceDelegate {
     function onPress(evt as ClickEvent) {
         var coords = evt.getCoordinates();
         var hasStyles =
+            //true;/*
             Rez has :Styles;
-            //true;
+            //*/
+
         if (hasStyles) {
             if(coords[1] < Rez.Styles.device_info.screenHeight as Toybox.Lang.Number / 2) {
                 Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_SUNRISE));

@@ -29,11 +29,13 @@ class WfView extends WatchUi.WatchFace {
         WatchFace.initialize();
 
         var hasGetVectorFont =
+            //true;/*
             Graphics has :getVectorFont;
-            //true;
+            //*/
         var hasStyles =
+            //true;/*
             Rez has :Styles;
-            //true;
+            //*/
 
         // Hopefully this looks good on non-enduro devices
         // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
@@ -86,14 +88,17 @@ class WfView extends WatchUi.WatchFace {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
         var hasSetClip =
+            //true;/*
             Graphics.Dc has :setClip;
-            //true;
+            //*/
         var hasStyles =
+            //true;/*
             Rez has :Styles;
-            //true;
+            //*/
         var hasWeather =
+            //true;/*
             Toybox has :Weather && Weather has :getSunrise;
-            //true;
+            //*/
 
         var screenWidth, centerX, centerY, dateY, sunY;
         if (hasStyles) {
