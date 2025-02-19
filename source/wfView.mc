@@ -135,8 +135,6 @@ class wfView extends WatchUi.WatchFace {
 
         // If the day has changed, get new data for the sunrise, sunset, and how to display the date
         if( day != date.day ) {
-            dc.clear();
-
             day = date.day;
 
             dayString = Lang.format("$1$ ", [date.day_of_week]);
@@ -159,6 +157,9 @@ class wfView extends WatchUi.WatchFace {
 
             // Store all the info that will only change here. The app is entirely re-created every time you leave and come back, so storing some of this stuff that's "expensive" to compute makes the re-initialization process more efficient.
             Storage.setValue('d', [day, date_x, dayString, dateString, sunriseTime.value(), sunsetTime.value(), sunriseOffset]);
+
+            // Also clear the screen at the start of the day
+            dc.clear();
         } else if( now.greaterThan(sunTime) ) {
             // The upcoming sun event has passed, update the string.
             updateSun(now);
