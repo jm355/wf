@@ -75,7 +75,7 @@ class WfView extends WatchUi.WatchFace {
         _timeHeight = Graphics.getFontHeight(_font) / 2;
         _halfTimeHeight = _timeHeight / 2;
 
-        if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
+        if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth && Rez.Styles.device_info has :screenHeight) {
             centerX = Rez.Styles.device_info.screenWidth as Number / 2;
             centerY = Rez.Styles.device_info.screenHeight as Number / 2;
 
@@ -116,7 +116,7 @@ class WfView extends WatchUi.WatchFace {
     /// order of calls: onLayout()->onShow()->onUpdate()
     // Load your resources here
     function onLayout(dc as Dc) as Void {
-        if (!(Rez has :Styles && Rez.Styles.device_info has :screenWidth)) {
+        if (!(Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth && Rez.Styles.device_info has :screenHeight)) {
             centerX = dc.getWidth() / 2;
             centerY = dc.getHeight() / 2;
 
@@ -214,7 +214,7 @@ class WfView extends WatchUi.WatchFace {
                     var clipScale = (moveBarLevel - 1) / 4.0f;
 
                     // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
-                    if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
+                    if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
                         dc.setClip(0, _timeTopLeft, Rez.Styles.device_info.screenWidth as Number, (_halfTimeHeight * (1 - clipScale)) + 10);
                     } else {
                         dc.setClip(0, _timeTopLeft, dc.getWidth(), (_halfTimeHeight * (1 - clipScale)) + 10);
@@ -223,7 +223,7 @@ class WfView extends WatchUi.WatchFace {
 
                     // Draw the red part of the text
                     dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_BLACK);
-                    if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
+                    if (Rez has :Styles && Rez.Styles has :device_info && Rez.Styles.device_info has :screenWidth) {
                         dc.setClip(0, centerY - (_halfTimeHeight * clipScale), Rez.Styles.device_info.screenWidth as Number, _timeHeight);
                     } else {
                         dc.setClip(0, centerY - (_halfTimeHeight * clipScale), dc.getWidth(), _timeHeight);
