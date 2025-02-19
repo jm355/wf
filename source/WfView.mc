@@ -35,9 +35,9 @@ class WfView extends WatchUi.WatchFace {
     //private var cbCount as Number = 0;
 
     function updateSunTime(now as Moment) as Void {
-        if( now.lessThan(_sunriseTime) ) {
+        if(now.lessThan(_sunriseTime)) {
             _sunTime = _sunriseTime;
-        } else if( now.lessThan(_sunsetTime) ) {
+        } else if(now.lessThan(_sunsetTime)) {
             _sunTime = _sunsetTime;
         } else {
             _sunTime = _sunriseTime.add(new Time.Duration(_sunriseOffset)).add(_secsPerDay);
@@ -106,6 +106,7 @@ class WfView extends WatchUi.WatchFace {
     // Load your resources here
     function onLayout(dc as Dc) as Void {
         // We can limit the number of calls to dc.clear() by only running it on layout and at the start of the day, because the text only gets wider throughout the day
+        // Unfortunately, the device clears the screen before calling onUpdate in high power mode (i.e. on wrist gesture), so we can't check the minute to decide whether to exit onUpdate() early
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.clear();
     }
@@ -120,8 +121,6 @@ class WfView extends WatchUi.WatchFace {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
 
-        // I wish you could only run this if the minute != the previous/saved minute, but unfortunately that causes a black screen when you look at the watch
-
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
 
@@ -130,7 +129,7 @@ class WfView extends WatchUi.WatchFace {
         //dc.drawText(_dateX, 30, Graphics.FONT_SYSTEM_MEDIUM, "c" + cbCount + "s" + date.sec, Graphics.TEXT_JUSTIFY_CENTER);
 
         // If the day has changed, get new data for the sunrise, sunset, and how to display the date
-        if( _day != date.day ) {
+        if(_day != date.day) {
             _day = date.day;
 
             _dayString = date.day_of_week + " ";
@@ -139,8 +138,8 @@ class WfView extends WatchUi.WatchFace {
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
             _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_SYSTEM_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_SYSTEM_MEDIUM)) / 2);
 
-            var today = Time.today();
             var oldSunriseTime = _sunriseTime.add(_secsPerDay);
+            var today = Time.today();
 
             _sunriseTime = today.add(new Time.Duration(Complications.getComplication(WfApp.sunriseId).value as Number));
             _sunsetTime = today.add(new Time.Duration(Complications.getComplication(_sunsetId).value as Number));
@@ -156,7 +155,7 @@ class WfView extends WatchUi.WatchFace {
 
             // Also clear the screen at the start of the day
             dc.clear();
-        } else if( now.greaterThan(_sunTime) ) {
+        } else if(now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
             updateSunTime(now);
         }
