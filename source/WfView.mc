@@ -8,22 +8,28 @@ import Toybox.WatchUi;
 import Toybox.Weather;
 
 class WfView extends WatchUi.WatchFace {
-    var _dateX as Number;
-    var _timeTopLeft as Number;
+    private var _font as VectorFont or FontType;
 
-    var _step as Number;
+    /*
+    For Enduro 3:
+    _step = 9
+    _timeTopLeft = 97
+    */
+    private var _step as Number;
+    private var _timeTopLeft as Number;
 
-    var _day as Number;
-    var _sunriseTime as Moment;
-    var _nextSunriseTime as Moment;
-    var _sunsetTime as Moment;
-    var _sunTime as Moment;
-    var _sunString as String;
-    var _sunColor as ColorValue;
+    private var _day as Number;
+    private var _dateX as Number;
+    private var _dateString as String;
 
-    var _dateString as String;
+    private var _sunsetTime as Moment;
+    private var _sunriseTime as Moment;
+    private var _nextSunriseTime as Moment;
 
-    var _font as VectorFont or FontType;
+    private var _sunTime as Moment;
+    private var _sunColor as ColorValue;
+    private var _sunString as String;
+
 
     function initialize() {
         WatchFace.initialize();
@@ -53,24 +59,23 @@ class WfView extends WatchUi.WatchFace {
         var halfTimeHeight = Graphics.getFontHeight(_font) / 4;
         _step = halfTimeHeight / 4;
 
-        _dateX = 0;
-
         if (hasStyles) {
             _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - halfTimeHeight - 4;
         } else {
             _timeTopLeft = (Toybox.System.getDeviceSettings().screenHeight / 2) - halfTimeHeight - 4;
         }
 
+        _day = 0;
+        _dateX = _day;
+        _dateString = "";
 
-        _day = _dateX;
-        _sunriseTime = new Time.Moment(_dateX);
-        _sunsetTime = _sunriseTime;
-        _nextSunriseTime = _sunriseTime;
-        _sunTime = _sunriseTime;
-        _sunString = "";
-        _sunColor = _dateX as ColorValue;
+        _sunsetTime = new Time.Moment(_day);
+        _sunriseTime = _sunsetTime;
+        _nextSunriseTime = _sunsetTime;
 
-        _dateString = _sunString;
+        _sunTime = _sunsetTime;
+        _sunColor = _day as ColorValue;
+        _sunString = _dateString;
     }
 
     //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
