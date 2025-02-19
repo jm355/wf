@@ -1,22 +1,23 @@
 import Toybox.ActivityMonitor;
+import Toybox.Complications;
 import Toybox.Graphics;
 import Toybox.Lang;
-import Toybox.WatchUi;
+import Toybox.Position;
 import Toybox.Time;
-import Toybox.Complications;
+import Toybox.WatchUi;
+import Toybox.Weather;
 
 class WfView extends WatchUi.WatchFace {
-    private static var _screenWidth as Number;
+    private var _screenWidth as Number = 0;
     private var _dateX as Number = 0;
-    private static var _dateY as Number;
-    private static var _sunY as Number;
-    private static var _timeTopLeft as Number;
+    private var _dateY as Number;
+    private var _sunY as Number;
+    private var _timeTopLeft as Number;
 
-    private static var _timeHeight as Number;
-    private static var _halfTimeHeight as Number;
+    private var _timeHeight as Number;
+    private var _halfTimeHeight as Number;
 
     private var _day as Number = 0;
-    private var _nextSunriseTime as Moment = new Moment(0);
     private var _sunriseTime as Moment = new Moment(0);
     private var _sunsetTime as Moment = new Moment(0);
     private var _sunTime as Moment = new Moment(0);
@@ -26,53 +27,84 @@ class WfView extends WatchUi.WatchFace {
     private var _dayString as String = "";
     private var _dateString as String = "";
 
-    private static var _font as VectorFont or FontType;
+    private var _font as VectorFont or FontType;
 
-    private static const _sunsetId = new Id(Complications.COMPLICATION_TYPE_SUNSET);
-    private static const _secsPerDay = new Time.Duration(Gregorian.SECONDS_PER_DAY);
+    private var _sunsetId as Id;
+    private const _secsPerDay = new Time.Duration(Gregorian.SECONDS_PER_DAY);
 
     function updateSunTime(now as Moment) as Void {
-        if (now.greaterThan(_sunsetTime)) {
-            _sunTime = _nextSunriseTime;
-            _sunColor = Graphics.COLOR_YELLOW;
-        } else if (now.greaterThan(_sunriseTime)) {
-            _sunTime = _sunsetTime;
-            _sunColor = Graphics.COLOR_ORANGE;
-        } else {
-            _sunTime = _sunriseTime;
-            _sunColor = Graphics.COLOR_YELLOW;
-        }
+        if(Toybox has :Complications || Toybox has :Weather) {
+            if (now.greaterThan(_sunsetTime)) {
+                var pos = Position.getInfo().position;
+                if (pos != null) {
+                    var tomorrowSunrise = Weather.getSunrise(pos, now.add(_secsPerDay));
+                    if (tomorrowSunrise != null) {
+                        _sunTime = tomorrowSunrise;
+                    } else {
+                        _sunTime = _sunriseTime.add(_secsPerDay);
+                    }
+                } else {
+                    _sunTime = _sunriseTime.add(_secsPerDay);
+                }
+                _sunColor = Graphics.COLOR_YELLOW;
+            } else if (now.greaterThan(_sunriseTime)) {
+                _sunTime = _sunsetTime;
+                _sunColor = Graphics.COLOR_ORANGE;
+            } else {
+                _sunTime = _sunriseTime;
+                _sunColor = Graphics.COLOR_YELLOW;
+            }
 
-        var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
-        _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
+            var gregorianSunTime = Gregorian.info(_sunTime, Time.FORMAT_SHORT);
+            _sunString = gregorianSunTime.hour + ":" + gregorianSunTime.min.format("%02d");
+        }
     }
 
-    function initialize(w as Number) {
+    function initialize() {
         WatchFace.initialize();
 
         // Hopefully this looks good on non-enduro devices
         // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
-        var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 156});
-        if (tempFont != null) {
-            _font = tempFont;
+        if (Graphics has :getVectorFont) {
+            var tempFont = Graphics.getVectorFont({:face => "BionicSemiBold", :size => 156});
+            if (tempFont != null) {
+                _font = tempFont;
+            } else {
+                _font = Graphics.FONT_NUMBER_THAI_HOT;
+            }
         } else {
-            _font = Graphics.FONT_SYSTEM_NUMBER_THAI_HOT;
+            _font = Graphics.FONT_NUMBER_THAI_HOT;
+        }
+
+        if (Toybox has :Complications) {
+            _sunsetId = new Id(Complications.COMPLICATION_TYPE_SUNSET);
+        } else {
+            _sunsetId = 0 as Id;
         }
 
         _timeHeight = Graphics.getFontHeight(_font) / 2;
         _halfTimeHeight = _timeHeight / 2;
 
-		_screenWidth = w;
-        _dateY = WfApp.centerY + _halfTimeHeight;
+        if (Graphics has :getVectorFont) {
+            _dateY = WfApp.centerY + _halfTimeHeight;
+        } else {
+            _dateY = WfApp.centerY + _timeHeight;
+        }
 
         _timeTopLeft = WfApp.centerY - _halfTimeHeight - 10;
-        _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_SYSTEM_MEDIUM) + 5;
+        if(Toybox has :Complications || Toybox has :Weather) {
+            _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
+        } else {
+            _sunY = 0;
+        }
     }
 
     //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
     /// order of calls: onLayout()->onShow()->onUpdate()
     // Load your resources here
     function onLayout(dc as Dc) as Void {
+        _screenWidth = dc.getWidth();
+
         // We can limit the number of calls to dc.clear() by only running it on layout and at the start of the day, because the text only gets wider throughout the day
         // Unfortunately, the device clears the screen before calling onUpdate in high power mode (i.e. on wrist gesture), so we can't check the minute to decide whether to exit onUpdate() early
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
@@ -100,35 +132,41 @@ class WfView extends WatchUi.WatchFace {
             _dateString = date.month + " " + date.day;
 
             // Get the x axis offset for displaying the date. This makes it look like there's one centered string, even though it's really two strings being drawn so we can get different colors for the day and date
-            _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_SYSTEM_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_SYSTEM_MEDIUM)) / 2);
+            _dateX = WfApp.centerX - ((dc.getTextWidthInPixels(_dateString, Graphics.FONT_MEDIUM) - dc.getTextWidthInPixels(_dayString, Graphics.FONT_MEDIUM)) / 2);
 
             // Get sunrise/sunset data
-            var today = Time.today();
+            if (Toybox has :Complications) {
+                var today = Time.today();
+                _sunriseTime = today.add(new Time.Duration(Complications.getComplication(WfApp.sunriseId).value as Number));
+                _sunsetTime = today.add(new Time.Duration(Complications.getComplication(_sunsetId).value as Number));
 
-            // We have yesterdays _sunriseTime, so we can calculate the sunrise offset. At this point _sunriseTime is for yesterday, so pull it up to today
-            if (_sunriseTime.value() != 0) {
-                _nextSunriseTime = _sunriseTime.add(_secsPerDay);
+                // Got new sun data, so update the string
+                updateSunTime(now);
+            } else if (Toybox has :Weather) {
+                var pos = Position.getInfo().position;
+                if (pos != null) {
+                    var sunriseTime = Weather.getSunrise(pos, now);
+                    var sunsetTime = Weather.getSunset(pos, now);
+                    if (sunriseTime != null) {
+                        _sunriseTime = sunriseTime;
+                    }
+                    if (sunsetTime != null) {
+                        _sunsetTime = sunsetTime;
+                    }
+                    if (_sunriseTime.value() != 0 && _sunsetTime.value() != 0) {
+                        // Got new sun data, so update the string
+                        updateSunTime(now);
+                    }
+                }
             }
-
-            _sunriseTime = today.add(new Time.Duration(Complications.getComplication(WfApp.sunriseId).value as Number));
-            _sunsetTime = today.add(new Time.Duration(Complications.getComplication(_sunsetId).value as Number));
-
-            // Similar to above, _nextSunriseTime has been set, so we can compare it to the new _sunriseTime to get the amount to adjust by for a slightly more accurate _nextSunriseTime. Add a day to make _nextSunriseTime the sunrise time for tomorrow
-            if (_nextSunriseTime.value() != 0) {
-                _nextSunriseTime = _sunriseTime.add(new Time.Duration(_sunriseTime.compare(_nextSunriseTime) + Gregorian.SECONDS_PER_DAY));
-            } else {
-                // We didn't have the old sunrise time, so just naively add a day to _sunriseTime
-                _nextSunriseTime = _sunriseTime.add(_secsPerDay);
-            }
-
-            // Got new sun data, so update the string
-            updateSunTime(now);
 
             // Also clear the screen at the start of the day
             dc.clear();
         } else if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
-            updateSunTime(now);
+            if (Toybox has :Complications || Toybox has :Weather) {
+                updateSunTime(now);
+            }
         }
 
         var timeString = date.hour + ":" + date.min.format("%02d");
@@ -136,7 +174,7 @@ class WfView extends WatchUi.WatchFace {
 
         // Draw the time with the move bar filling it up
         if (moveBarLevel != null && moveBarLevel > ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
-            if (moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
+            if (Dc has :setClip && moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
                 var clipScale = (moveBarLevel - 1) / 4.0f;
 
                 // Draw the white part of the text. _timeTopLeft has the 10 pixel offset already accounted for
@@ -159,14 +197,16 @@ class WfView extends WatchUi.WatchFace {
             dc.drawText(WfApp.centerX, WfApp.centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
-        // Draw the sun time and date
-        dc.setColor(_sunColor, Graphics.COLOR_BLACK);
-        dc.drawText(WfApp.centerX, _sunY, Graphics.FONT_SYSTEM_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
+        if(Toybox has :Complications || Toybox has :Weather) {
+            // Draw the sun time and date
+            dc.setColor(_sunColor, Graphics.COLOR_BLACK);
+            dc.drawText(WfApp.centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
+        }
 
         dc.setColor(Graphics.COLOR_BLUE, Graphics.COLOR_BLACK);
-        dc.drawText(_dateX, _dateY, Graphics.FONT_SYSTEM_MEDIUM, _dayString, Graphics.TEXT_JUSTIFY_RIGHT);
+        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dayString, Graphics.TEXT_JUSTIFY_RIGHT);
 
         dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_BLACK);
-        dc.drawText(_dateX, _dateY, Graphics.FONT_SYSTEM_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(_dateX, _dateY, Graphics.FONT_MEDIUM, _dateString, Graphics.TEXT_JUSTIFY_LEFT);
     }
 }
