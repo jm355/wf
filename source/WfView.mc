@@ -44,23 +44,24 @@ class WfView extends WatchUi.WatchFace {
         var halfTimeHeight = Graphics.getFontHeight(_font) / 4;
         _step = halfTimeHeight / 4;
 
+        _dateX = 0;
+
         if (Rez has :Styles) {
             _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - halfTimeHeight - 4;
         } else {
-            _timeTopLeft = 0;
+            _timeTopLeft = _dateX;
         }
 
-        _dateX = 0;
 
-        _day = 0;
-        _sunriseTime = new Time.Moment(0);
-        _sunsetTime = new Time.Moment(0);
-        _nextSunriseTime = new Time.Moment(0);
-        _sunTime = new Time.Moment(0);
+        _day = _dateX;
+        _sunriseTime = new Time.Moment(_dateX);
+        _sunsetTime = _sunriseTime;
+        _nextSunriseTime = _sunriseTime;
+        _sunTime = _sunriseTime;
         _sunString = "";
-        _sunColor = 0 as ColorValue;
+        _sunColor = _dateX as ColorValue;
 
-        _dateString = "";
+        _dateString = _sunString;
     }
 
     //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
