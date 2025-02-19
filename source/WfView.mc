@@ -59,14 +59,6 @@ class WfView extends WatchUi.WatchFace {
     function initialize() {
         WatchFace.initialize();
 
-        if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
-            centerX = Rez.Styles.device_info.screenWidth as Number / 2;
-            centerY = Rez.Styles.device_info.screenHeight as Number / 2;
-        } else {
-            centerX = 0;
-            centerY = 0;
-        }
-
         // Hopefully this looks good on non-enduro devices
         // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
         if (Graphics has :getVectorFont) {
@@ -83,10 +75,32 @@ class WfView extends WatchUi.WatchFace {
         _timeHeight = Graphics.getFontHeight(_font) / 2;
         _halfTimeHeight = _timeHeight / 2;
 
+        if (Rez has :Styles && Rez.Styles.device_info has :screenWidth) {
+            centerX = Rez.Styles.device_info.screenWidth as Number / 2;
+            centerY = Rez.Styles.device_info.screenHeight as Number / 2;
+
+            if (Graphics has :getVectorFont) {
+                _dateY = centerY + _halfTimeHeight;
+            } else {
+                _dateY = centerY + _timeHeight;
+            }
+
+            _timeTopLeft = centerY - _halfTimeHeight - 10;
+            if(Toybox has :Weather) {
+                _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
+            } else {
+                _sunY = 0;
+            }
+        } else {
+            centerX = 0;
+            centerY = 0;
+
+            _dateY = 0;
+            _sunY = 0;
+            _timeTopLeft = 0;
+        }
+
         _dateX = 0;
-        _dateY = 0;
-        _sunY = 0;
-        _timeTopLeft = 0;
 
         _day = 0;
         _sunriseTime = new Time.Moment(0);
@@ -95,7 +109,7 @@ class WfView extends WatchUi.WatchFace {
         _sunString = "";
         _sunColor = 0 as ColorValue;
 
-        _dateString = _sunString;
+        _dateString = "";
     }
 
     //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
@@ -105,19 +119,17 @@ class WfView extends WatchUi.WatchFace {
         if (!(Rez has :Styles && Rez.Styles.device_info has :screenWidth)) {
             centerX = dc.getWidth() / 2;
             centerY = dc.getHeight() / 2;
-        }
 
-        if (Graphics has :getVectorFont) {
-            _dateY = centerY + _halfTimeHeight;
-        } else {
-            _dateY = centerY + _timeHeight;
-        }
+            if (Graphics has :getVectorFont) {
+                _dateY = centerY + _halfTimeHeight;
+            } else {
+                _dateY = centerY + _timeHeight;
+            }
 
-        _timeTopLeft = centerY - _halfTimeHeight - 10;
-        if(Toybox has :Weather) {
-            _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
-        } else {
-            _sunY = 0;
+            _timeTopLeft = centerY - _halfTimeHeight - 10;
+            if(Toybox has :Weather) {
+                _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
+            }
         }
 
         // We can limit the number of calls to dc.clear() by only running it on layout and at the start of the day, because the text only gets wider throughout the day
