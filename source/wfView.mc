@@ -34,6 +34,7 @@ class wfView extends WatchUi.WatchFace {
     private const centerJust as Number = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
     private const secs_per_day as Duration = new Time.Duration(Gregorian.SECONDS_PER_DAY);
 
+    // debug stuff
     //private var cbCount as Number = 0;
 
     function updateSun(now as Moment) as Void {
@@ -73,6 +74,7 @@ class wfView extends WatchUi.WatchFace {
         timeTopLeft = center_y - halfTimeHeight - 10;
         sun_y = timeTopLeft - 15;
 
+        // debug stuff
         //Storage.clearValues();
 
         var sundata = Storage.getValue('s') as [Number, String];
@@ -96,12 +98,11 @@ class wfView extends WatchUi.WatchFace {
             date_x = 0;
             dayString = "";
             dateString = "";
+            // This makes it so the oldSunriseTime logic below works even on the initial run, except in this case the sunriseOffset will be 0. That's fine, it's not that important and every other time after the initial run will have a real value to work with. Could get wonky if the user uses this face, then switches to another one, then switches back, but it'll only be off for a day and only affect the sunrise time displayed between sunset and midnight of the first run after a long hiatus
             sunriseTime = Time.today().add(new Time.Duration(Complications.getComplication(sunriseId).value as Number)).subtract(secs_per_day) as Moment;
             sunsetTime = new Moment(0);
             sunriseOffset = 0;
-
         }
-
     }
 
     //// https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/View.html
@@ -128,6 +129,7 @@ class wfView extends WatchUi.WatchFace {
         // Set the color before potentially calling dc.clear() and before drawing time text
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
 
+        // debug stuff
         //cbCount = cbCount + 1;
         //dc.drawText(date_x, 30, Graphics.FONT_SYSTEM_MEDIUM, Lang.format("c$1$ s$2$", [cbCount, date.sec]), Graphics.TEXT_JUSTIFY_CENTER);
 
@@ -167,7 +169,7 @@ class wfView extends WatchUi.WatchFace {
             if(moveBarLevel < Toybox.ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
                 var clipScale = (moveBarLevel - 1) / 4.0f;
 
-                // Draw the white part of the text
+                // Draw the white part of the text. timeTopLeft has the 10 pixel offset already accounted for
                 dc.setClip(0, timeTopLeft, screenWidth, (halfTimeHeight * (1-clipScale))+10);
                 dc.drawText(center_x, center_y, font, timeString, centerJust);
 
