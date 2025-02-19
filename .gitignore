@@ -1,3 +1,9 @@
 .vscode
 bin
 wf.iq
+mir
+internal-mir
+gen
+*.der
+*.pem
+wf.prg*
