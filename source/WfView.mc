@@ -98,7 +98,8 @@ class WfView extends WatchUi.WatchFace {
 
         // We can limit the number of calls to dc.clear() by only running it on layout and at the start of the day, because the text only gets wider throughout the day
         // Unfortunately, the device clears the screen before calling onUpdate in high power mode (i.e. on wrist gesture), so we can't check the minute to decide whether to exit onUpdate() early
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        // On at least one device (Epix Pro), this isn't called when you go to the glance list and back to the watchface, resulting in a temporary screen where the text is drawn over the glance list
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
     }
 
