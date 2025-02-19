@@ -3,8 +3,8 @@ import Toybox.Complications;
 
 class WfDeligate extends WatchUi.WatchFaceDelegate
 {
-    private const _bottomLeftId as Id = new Id(Complications.COMPLICATION_TYPE_CURRENT_WEATHER);
-    private const _bottomRightId as Id = new Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS);
+    private static const _bottomLeftId as Id = new Id(Complications.COMPLICATION_TYPE_CURRENT_WEATHER);
+    private static const _bottomRightId as Id = new Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS);
 
 	function initialize() {
 		WatchFaceDelegate.initialize();
