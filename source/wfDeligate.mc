@@ -3,29 +3,29 @@ import Toybox.System;
 import Toybox.WatchUi;
 import Toybox.Complications;
 
-class wfDeligate extends WatchUi.WatchFaceDelegate
+class WfDeligate extends WatchUi.WatchFaceDelegate
 {
-    private var center_y as Number;
-    private var center_x as Number;
-    private const topId as Id = new Id(Complications.COMPLICATION_TYPE_SUNRISE);
-    private const bottomLeftId as Id = new Id(Complications.COMPLICATION_TYPE_CURRENT_WEATHER);
-    private const bottomRightId as Id = new Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS);
+    private var _centerY as Number;
+    private var _centerX as Number;
+    private const _topId as Id = new Id(Complications.COMPLICATION_TYPE_SUNRISE);
+    private const _bottomLeftId as Id = new Id(Complications.COMPLICATION_TYPE_CURRENT_WEATHER);
+    private const _bottomRightId as Id = new Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS);
 
 	function initialize(h as Number, w as Number) {
 		WatchFaceDelegate.initialize();
 
-		center_y = h/2;
-		center_x = w/2;
+		_centerY = h/2;
+		_centerX = w/2;
 	}
 
     function onPress(evt as WatchUi.ClickEvent) {
-        var c=evt.getCoordinates();
-        if(c[1] < center_y) {
-            Complications.exitTo(topId);
-        } else if(c[0] < center_x) {
-            Complications.exitTo(bottomLeftId);
+        var coords = evt.getCoordinates();
+        if(coords[1] < _centerY) {
+            Complications.exitTo(_topId);
+        } else if(coords[0] < _centerX) {
+            Complications.exitTo(_bottomLeftId);
         } else {
-            Complications.exitTo(bottomRightId);
+            Complications.exitTo(_bottomRightId);
         }
         return true;
     }
