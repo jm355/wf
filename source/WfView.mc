@@ -131,13 +131,12 @@ class WfView extends WatchUi.WatchFace {
                 _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
             }
         }
-
-        // We can limit the number of calls to dc.clear() by only running it on layout and at the start of the day, because the text only gets wider throughout the day
-        // Unfortunately, the device clears the screen before calling onUpdate in high power mode (i.e. on wrist gesture), so we can't check the minute to decide whether to exit onUpdate() early
-        // On at least one device (Epix Pro), this isn't called when you go to the glance list and back to the watchface, resulting in a temporary screen where the text is drawn over the glance list
-        //dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        //dc.clear();
     }
+
+//todo issues on venu mercedes benz, garmin swim 2, d2 air
+//venu has sun overlapping time
+//instinct crossover has built in hands, disable
+//instincts, descent g1 are b/w, don't show date. disable
 
     // Called when this View is brought to the foreground. Restore
     // the state of this View and prepare it to be shown. This includes
@@ -187,9 +186,6 @@ class WfView extends WatchUi.WatchFace {
                     }
                 }
             }
-
-            // Also clear the screen at the start of the day
-            //dc.clear();
         } else if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
             if (Toybox has :Weather) {
