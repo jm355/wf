@@ -1,6 +1,6 @@
 .vscode
 bin
-wf.iq
+*.iq
 mir
 internal-mir
 gen
