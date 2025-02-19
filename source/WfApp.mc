@@ -1,5 +1,4 @@
 import Toybox.Application;
-import Toybox.Lang;
 import Toybox.WatchUi;
 
 class WfApp extends Application.AppBase {
@@ -15,7 +14,10 @@ class WfApp extends Application.AppBase {
 
     // Return the initial view of your application here
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        if (Toybox has :Complications) {
+        var hasComplications =
+            Toybox has :Complications;
+            //true;
+        if (hasComplications) {
             return [ new WfView(), new WfDeligate() ];
         } else {
             return [ new WfView() ];
