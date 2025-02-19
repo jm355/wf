@@ -127,14 +127,13 @@ class WfView extends WatchUi.WatchFace {
             }
 
             _timeTopLeft = centerY - _halfTimeHeight - 10;
-            if(Toybox has :Weather) {
+            if(Toybox has :Weather && Weather has :getSunrise) {
                 _sunY = _timeTopLeft - Graphics.getFontHeight(Graphics.FONT_MEDIUM) + 5;
             }
-        }
+            }
     }
 
-//todo issues on venu mercedes benz, garmin swim 2, d2 air
-//venu has sun overlapping time
+//todo venu has sun overlapping time
 //instinct crossover has built in hands, disable
 //instincts, descent g1 are b/w, don't show date. disable
 
@@ -169,7 +168,7 @@ class WfView extends WatchUi.WatchFace {
 
                 // Got new sun data, so update the string
                 updateSunTime(now);
-            } else if (Toybox has :Weather) {
+            } else if (Toybox has :Weather && Weather has :getSunrise) {
                 var pos = Position.getInfo().position;
                 if (pos != null) {
                     var sunriseTime = Weather.getSunrise(pos, now);
@@ -188,12 +187,13 @@ class WfView extends WatchUi.WatchFace {
             }
         } else if (now.greaterThan(_sunTime)) {
             // The upcoming sun event has passed, update the string.
-            if (Toybox has :Weather) {
+            if (Toybox has :Weather && Weather has :getSunrise) {
                 updateSunTime(now);
             }
         }
 
         // System.getDeviceSettings().isNightModeEnabled
+
         var moveBarLevel = ActivityMonitor.getInfo().moveBarLevel;
         var timeString;
         if (Graphics.Dc has :setClip) {
@@ -204,7 +204,6 @@ class WfView extends WatchUi.WatchFace {
 
         // Draw the time with the move bar filling it up
         if (moveBarLevel != null && moveBarLevel > ActivityMonitor.MOVE_BAR_LEVEL_MIN) {
-            // todo if it doesn't have setclip, go digit by digit
             if (moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
                 if (Graphics.Dc has :setClip) {
                     var clipScale = (moveBarLevel - 1) / 4.0f;
@@ -254,7 +253,7 @@ class WfView extends WatchUi.WatchFace {
             dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
-        if (Toybox has :Weather) {
+        if (Toybox has :Weather && Weather has :getSunrise) {
             // Draw the sun time and date
             dc.setColor(_sunColor, Graphics.COLOR_BLACK);
             dc.drawText(centerX, _sunY, Graphics.FONT_MEDIUM, _sunString, Graphics.TEXT_JUSTIFY_CENTER);
