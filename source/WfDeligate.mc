@@ -23,7 +23,7 @@ class WfDeligate extends WatchUi.WatchFaceDelegate {
             } else if(coords[0] < Rez.Styles.device_info.screenWidth as Toybox.Lang.Number / 2) {
                 Complications.exitTo(weatherComplication);
             } else {
-                Complications.exitTo(new Complications.Id(Complications.COMPLICATION_TYPE_CALENDAR_EVENTS));
+                Complications.exitTo(calendarComplication);
             }
         } else {
             var settings = Toybox.System.getDeviceSettings();
