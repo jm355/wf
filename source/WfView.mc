@@ -14,8 +14,13 @@ class WfView extends WatchUi.WatchFace {
     _step = 9
     _timeTopLeft = 97
     */
+    const isEnduro3 = 
+        //true;/*
+        false;
+
     private var _step as Number;
     private var _timeTopLeft as Number;
+    //*/
 
     private var _day as Number;
     private var _dateX as Number;
@@ -33,14 +38,8 @@ class WfView extends WatchUi.WatchFace {
     function initialize() {
         WatchFace.initialize();
 
-        var hasGetVectorFont =
-            //true;/*
-            Graphics has :getVectorFont;
-            //*/
-        var hasStyles =
-            //true;/*
-            Rez has :Styles;
-            //*/
+        var hasGetVectorFont = isEnduro3 || Graphics has :getVectorFont;
+        var hasStyles = isEnduro3 || Rez has :Styles;
 
         // Hopefully this looks good on non-enduro devices
         // other fonts that look good on enduro 3: "RobotoCondensedRegular" and "KosugiRegular"
@@ -55,13 +54,15 @@ class WfView extends WatchUi.WatchFace {
             _font = Graphics.FONT_NUMBER_THAI_HOT;
         }
 
-        var halfTimeHeight = Graphics.getFontHeight(_font) / 4;
-        _step = halfTimeHeight / 4;
+        if (!isEnduro3) {
+            var halfTimeHeight = Graphics.getFontHeight(_font) / 4;
+            _step = halfTimeHeight / 4;
 
-        if (hasStyles) {
-            _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - halfTimeHeight - 4;
-        } else {
-            _timeTopLeft = (Toybox.System.getDeviceSettings().screenHeight / 2) - halfTimeHeight - 4;
+            if (hasStyles) {
+                _timeTopLeft = (Rez.Styles.device_info.screenHeight as Number / 2) - halfTimeHeight - 4;
+            } else {
+                _timeTopLeft = (Toybox.System.getDeviceSettings().screenHeight / 2) - halfTimeHeight - 4;
+            }
         }
 
         _day = 0;
@@ -91,18 +92,9 @@ class WfView extends WatchUi.WatchFace {
     function onUpdate(dc as Dc) as Void {
         var now = Time.now();
         var date = Gregorian.info(now, Time.FORMAT_MEDIUM);
-        var hasSetClip =
-            //true;/*
-            Graphics.Dc has :setClip;
-            //*/
-        var hasStyles =
-            //true;/*
-            Rez has :Styles;
-            //*/
-        var hasWeather =
-            //true;/*
-            Toybox has :Weather && Weather has :getSunrise;
-            //*/
+        var hasSetClip = isEnduro3 || Graphics.Dc has :setClip;
+        var hasStyles = isEnduro3 || Rez has :Styles;
+        var hasWeather = isEnduro3 || Toybox has :Weather && Weather has :getSunrise;
 
         var screenWidth, centerX, centerY, dateY, sunY;
         if (hasStyles) {
@@ -187,15 +179,28 @@ class WfView extends WatchUi.WatchFace {
             if (moveBarLevel < ActivityMonitor.MOVE_BAR_LEVEL_MAX) {
                 if (hasSetClip) {
                     // _timeTopLeft has the 4 pixel offset already accounted for
-                    var offset = ((ActivityMonitor.MOVE_BAR_LEVEL_MAX - moveBarLevel) * _step) + 4;
+                    var offset;
+                    if (isEnduro3) {
+                        offset = ((ActivityMonitor.MOVE_BAR_LEVEL_MAX * 9) - (moveBarLevel * 9)) + 4;
+                    } else {
+                        offset = ((ActivityMonitor.MOVE_BAR_LEVEL_MAX - moveBarLevel) * _step) + 4;
+                    }
 
                     // Draw the white part of the text.
-                    dc.setClip(0, _timeTopLeft, screenWidth, offset);
+                    if (isEnduro3) {
+                        dc.setClip(0, 97, screenWidth, offset);
+                    } else {
+                        dc.setClip(0, _timeTopLeft, screenWidth, offset);
+                    }
                     dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                     // Draw the red part of the text
                     dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-                    dc.setClip(0, _timeTopLeft + offset, screenWidth, screenWidth);
+                    if (isEnduro3) {
+                        dc.setClip(0, 97 + offset, screenWidth, screenWidth);
+                    } else {
+                        dc.setClip(0, _timeTopLeft + offset, screenWidth, screenWidth);
+                    }
                     dc.drawText(centerX, centerY, _font, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
                     dc.clearClip();
