@@ -13,16 +13,8 @@ class WfApp extends Application.AppBase {
     //function onStop(state as Dictionary?) as Void {}
 
     // Return the initial view of your application here
-    function getInitialView() as [Views] or [Views, InputDelegates] {
-        var hasComplications =
-            //true;/*
-            Toybox has :Complications;
-            //*/
-        if (hasComplications) {
-            return [ new WfView(), new WfDeligate() ];
-        } else {
-            return [ new WfView() ];
-        }
+    function getInitialView() as [Views] {
+        return [ new WfView() ];
     }
 }
 
