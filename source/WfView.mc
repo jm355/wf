@@ -13,6 +13,7 @@ class WfView extends WatchUi.WatchFace {
     For Enduro 3:
     _step = 9
     _timeTopLeft = 97
+    Add or remove // before true to toggle, that's all that's needed.
     */
     const isEnduro3 = 
         //true;/*
